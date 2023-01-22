@@ -19,7 +19,7 @@ namespace cloud_dictionary
 
         [Function("GetDefinitions")]
         public async Task<HttpResponseData> GetDefinitions(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
