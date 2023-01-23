@@ -19,10 +19,10 @@ class Program
 
                                 return new CosmosClient(Environment.GetEnvironmentVariable("AZURE_COSMOS_ENDPOINT"), new CosmosClientOptions
                                 {
-                                    SerializerOptions = new CosmosSerializationOptions
+                                    /*SerializerOptions = new CosmosSerializationOptions
                                     {
                                         PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
-                                    }
+                                    }*/
                                 });
                             }
 

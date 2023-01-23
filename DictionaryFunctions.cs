@@ -31,5 +31,22 @@ namespace cloud_dictionary
 
             return response;
         }
+
+        [Function("GetRandomDefinition")]
+        public async Task<HttpResponseData> GetRandomDefinition(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+        {
+            _logger.LogInformation("C# HTTP trigger function processed a request.");
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+            var definition = await _dictionaryRepository.GetRandomDefinitionAsync();
+            response.WriteString(JsonSerializer.Serialize(definition));
+
+            return response;
+
+
+        }
+
     }
 }
