@@ -53,8 +53,7 @@ namespace cloud_dictionary
 
             IOrderedQueryable<Definition> linqQueryable = _definitionsCollection.GetItemLinqQueryable<Definition>();
             int count = await linqQueryable.CountAsync();
-            var definitions = await ToListAsync(
-                _definitionsCollection.GetItemLinqQueryable<Definition>(), null, null);
+            var definitions = await GetDefinitionsAsync(null, null);
             int randomIndex = new Random().Next(0, count);
             Definition definition = definitions.ElementAt(randomIndex);
             return definition;
