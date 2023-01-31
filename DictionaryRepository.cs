@@ -26,6 +26,14 @@ namespace cloud_dictionary
                 batchSize);
         }
 
+        public async Task<IEnumerable<WordDefinition>> GetWordsAsync(int? skip, int? batchSize)
+        {
+            return await ToListAsync(
+                _definitionsCollection.GetItemLinqQueryable<WordDefinition>(),
+                skip,
+                batchSize);
+        }
+
         public async Task<Definition?> GetDefinitionAsync(string listId)
         {
             var response = await _definitionsCollection.ReadItemAsync<Definition>(listId, new PartitionKey(listId));
