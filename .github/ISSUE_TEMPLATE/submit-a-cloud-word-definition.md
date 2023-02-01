@@ -8,7 +8,7 @@ assignees: madebygps
 ---
 
 - Word [REQUIRED]: The word you are defining. Check [this URL](https://clouddictionary.azurewebsites.net/api/GetWords) for all words we currently have.
-- Content [REQUIRED]: The definition.
+- Content [REQUIRED]: The definition. No more than 3 sentences.
 - Author Name [REQUIRED]: Your name.
 - Author Link [REQUIRED]: The URL you want your name to link to.
 - Learn More URL [REQUIRED]: Page where people can visit to learn more about the word.
