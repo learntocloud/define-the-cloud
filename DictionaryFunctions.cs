@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using cloud_dictionary.Shared;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
@@ -45,8 +46,20 @@ namespace cloud_dictionary
 
             return response;
 
-
         }
+
+        [Function("CreateDefinition")]
+    public async Task<HttpResponseData> CreateDefinition(
+       [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req, string word, string content, string learn_more_url, string tag, string abbreviation, string author_name, string author_link)
+    {
+        var response = req.CreateResponse(HttpStatusCode.Created);
+        var definition = new Definition(word, content, author_name, author_link, learn_more_url, tag, abbreviation);
+        await _dictionaryRepository.AddDefinitionAsync(definition);
+        response.WriteString(JsonSerializer.Serialize(definition));
+        return response;
+
+       
+    }
 
     }
 }

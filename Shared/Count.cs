@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace cloud_dictionary
+namespace cloud_dictionary.Shared
 {
     public class Count
     {

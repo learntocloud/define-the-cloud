@@ -1,3 +1,4 @@
+using cloud_dictionary.Shared;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using Microsoft.Extensions.Configuration;
@@ -40,8 +41,8 @@ namespace cloud_dictionary
 
         public async Task AddDefinitionAsync(Definition definition)
         {
-            definition.Id = Guid.NewGuid().ToString("N");
-            await _definitionsCollection.UpsertItemAsync(definition, new PartitionKey(definition.Id));
+            //definition.Id = Guid.NewGuid().ToString("N");
+            await _definitionsCollection.CreateItemAsync(definition, new PartitionKey(definition.Id));
         }
 
         public async Task UpdateDefinition(Definition existingDefinition)
