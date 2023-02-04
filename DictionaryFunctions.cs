@@ -20,27 +20,42 @@ namespace cloud_dictionary
 
         [Function("GetDefinitions")]
         public async Task<HttpResponseData> GetDefinitions(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             var definitions = await _dictionaryRepository.GetDefinitionsAsync(null, null);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+            response.Headers.Add("Content-Type", "application/json; charset=utf-8");
 
             response.WriteString(JsonSerializer.Serialize(definitions));
 
             return response;
         }
 
-        [Function("GetRandomDefinition")]
-        public async Task<HttpResponseData> GetRandomDefinition(
+        [Function("GetWords")]
+        public async Task<HttpResponseData> GetWords(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+            var words = await _dictionaryRepository.GetWordsAsync(null, null);
+            response.Headers.Add("Content-Type", "application/json; charset=utf-8");
+
+            response.WriteString(JsonSerializer.Serialize(words));
+
+            return response;
+        }
+
+        [Function("GetRandomDefinition")]
+        public async Task<HttpResponseData> GetRandomDefinition(
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        {
+            _logger.LogInformation("C# HTTP trigger function processed a request.");
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.Headers.Add("Content-Type", "application/json; charset=utf-8");
             var definition = await _dictionaryRepository.GetRandomDefinitionAsync();
             response.WriteString(JsonSerializer.Serialize(definition));
 

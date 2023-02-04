@@ -27,6 +27,14 @@ namespace cloud_dictionary
                 batchSize);
         }
 
+        public async Task<IEnumerable<WordDefinition>> GetWordsAsync(int? skip, int? batchSize)
+        {
+            return await ToListAsync(
+                _definitionsCollection.GetItemLinqQueryable<WordDefinition>(),
+                skip,
+                batchSize);
+        }
+
         public async Task<Definition?> GetDefinitionAsync(string listId)
         {
             var response = await _definitionsCollection.ReadItemAsync<Definition>(listId, new PartitionKey(listId));
@@ -54,8 +62,7 @@ namespace cloud_dictionary
 
             IOrderedQueryable<Definition> linqQueryable = _definitionsCollection.GetItemLinqQueryable<Definition>();
             int count = await linqQueryable.CountAsync();
-            var definitions = await ToListAsync(
-                _definitionsCollection.GetItemLinqQueryable<Definition>(), null, null);
+            var definitions = await GetDefinitionsAsync(null, null);
             int randomIndex = new Random().Next(0, count);
             Definition definition = definitions.ElementAt(randomIndex);
             return definition;
