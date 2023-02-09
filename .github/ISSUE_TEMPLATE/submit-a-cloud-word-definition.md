@@ -7,7 +7,7 @@ assignees: madebygps
 
 ---
 
-- Word [REQUIRED]: The word you are defining. Check [this URL](https://clouddictionary.azurewebsites.net/api/GetWords) for all words we currently have.
+- Word [REQUIRED]: The word you are defining. Check [this URL](https://zealous-flower-0f27b070f.2.azurestaticapps.net/) for all words we currently have.
 - Content [REQUIRED]: The definition. No more than 3 sentences.
 - Author Name [REQUIRED]: Your name.
 - Author Link [REQUIRED]: The URL you want your name to link to.
