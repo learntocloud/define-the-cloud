@@ -7,6 +7,8 @@ assignees: madebygps
 
 ---
 
+Fill out the JSON below with the following.
+
 - word [REQUIRED]: The word you are defining. Check [this URL](https://zealous-flower-0f27b070f.2.azurestaticapps.net/) for all words we currently have.
 - content [REQUIRED]: The definition. No more than 3 sentences.
 - learn more URL [REQUIRED]: Page where people can visit to learn more about the word.
@@ -14,3 +16,13 @@ assignees: madebygps
 - abbreviation [OPTIONAL]: If the word is commonly abbreviated, please provide it. For example, command line interface is often abbreviated as CLI.
 - author name [REQUIRED]: Your name.
 - author link [REQUIRED]: The URL you want your name to link to.
+
+{
+  "word": "",
+  "content": "",
+  "learn_more_URL":"",
+  "tag":"",
+  "abbreviation": "",
+  "author_name":"",
+  "author_link": ""
+}
