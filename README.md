@@ -1,4 +1,4 @@
-# Cloud Dictionary
+# LTC Dictionary
 
 View a list of all our definitions [here](https://zealous-flower-0f27b070f.2.azurestaticapps.net/)
 
