@@ -56,7 +56,7 @@ Tech category the word fits in. Options:
 - iot
 - monitoring
 - cost management
-- diaster recovery
+- disaster recovery
 
 ### abbreviation (OPTIONAL)
 
