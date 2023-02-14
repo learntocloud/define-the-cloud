@@ -9,8 +9,6 @@
   </a>
 </p>
 
-> CLI that generates beautiful README.md files.<br /> `readme-md-generator` will suggest you default answers by reading your `package.json` and `git` configuration.
-
 ## ✨ Demo
 
 Definitions submitted here appear on the [Learn to Cloud](https://learntocloud.guide) homepage.
