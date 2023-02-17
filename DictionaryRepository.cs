@@ -68,6 +68,10 @@ namespace cloud_dictionary
             return definition;
 
         }
+        public async Task UpdateListItem(Definition existingItem)
+        {
+            await _definitionsCollection.ReplaceItemAsync(existingItem, existingItem.Id, new PartitionKey(existingItem.Id));
+        }
 
         private async Task<List<T>> ToListAsync<T>(IQueryable<T> queryable, int? skip, int? batchSize)
         {

@@ -64,17 +64,40 @@ namespace cloud_dictionary
         }
 
         [Function("CreateDefinition")]
-    public async Task<HttpResponseData> CreateDefinition(
+        public async Task<HttpResponseData> CreateDefinition(
        [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req, string word, string content, string learn_more_url, string tag, string abbreviation, string author_name, string author_link)
-    {
-        var response = req.CreateResponse(HttpStatusCode.Created);
-        var definition = new Definition(word, content, author_name, author_link, learn_more_url, tag, abbreviation);
-        await _dictionaryRepository.AddDefinitionAsync(definition);
-        response.WriteString(JsonSerializer.Serialize(definition));
-        return response;
+        {
+            var response = req.CreateResponse(HttpStatusCode.Created);
+            var definition = new Definition(word, content, author_name, author_link, learn_more_url, tag, abbreviation);
+            await _dictionaryRepository.AddDefinitionAsync(definition);
+            response.WriteString(JsonSerializer.Serialize(definition));
+            return response;
 
-       
-    }
+        }
+        [Function("UpdateDefinition")]
+        public async Task<HttpResponseData> UpdateDefinition(
+           [HttpTrigger(AuthorizationLevel.Function, "put", Route = "{definition_id}")] HttpRequestData req, string definition_id,
+           string word, string content, string learn_more_url, string tag, string abbreviation, string author_name, string author_link)
+        {
+            {
+                var response = req.CreateResponse(HttpStatusCode.OK);
+                var existingItem = await _dictionaryRepository.GetDefinitionAsync(definition_id);
+                if (existingItem == null)
+                {
+                    return req.CreateResponse(HttpStatusCode.NotFound);
+                }
+                existingItem.Abbreviation = abbreviation;
+                existingItem.Author.Name = author_name;
+                existingItem.Author.Link = author_link;
+                existingItem.Content = content;
+                existingItem.LearnMoreUrl = learn_more_url;
+                existingItem.Tag = tag;
+                existingItem.Word = word;
+                await _dictionaryRepository.UpdateListItem(existingItem);
+                return response;
+            }
+
+        }
 
     }
 }
