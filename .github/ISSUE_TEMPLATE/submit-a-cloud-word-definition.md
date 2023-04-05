@@ -13,13 +13,13 @@ Fill out the JSON with your submission:
 
 ```json
     {
-    "word": "",
-    "content": "",
-    "learn_more_URL":"",
-    "tag":"",
+    "word": "Cloud",
+    "content": "In computing, the term cloud typically refers to a network of remote servers that are hosted on the internet and used to store, manage, and process data. This data can include everything from documents, photos to entire applications and systems.",
+    "learn_more_URL":"https://www.cloudflare.com/en-gb/learning/cloud/what-is-the-cloud/",
+    "tag":"service",
     "abbreviation": "",
-    "author_name":"",
-    "author_link": ""
+    "author_name":"Manasi Jain",
+    "author_link": "https://github.com/manasi-jain"
     }
 ```
 Fill out the JSON below with the following.
