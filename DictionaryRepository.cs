@@ -35,9 +35,9 @@ namespace cloud_dictionary
                 batchSize);
         }
 
-        public async Task<Definition?> GetDefinitionAsync(string listId)
+        public async Task<Definition?> GetDefinitionAsync(string id)
         {
-            var response = await _definitionsCollection.ReadItemAsync<Definition>(listId, new PartitionKey(listId));
+            var response = await _definitionsCollection.ReadItemAsync<Definition>(id, new PartitionKey(id));
             return response?.Resource;
         }
 

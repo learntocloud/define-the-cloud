@@ -33,6 +33,21 @@ namespace cloud_dictionary
             return response;
         }
 
+        [Function("GetDefinition")]
+        public async Task<HttpResponseData> GetDefinition(
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string id)
+        {
+            _logger.LogInformation("C# HTTP trigger function processed a request.");
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            var definition = await _dictionaryRepository.GetDefinitionAsync(id);
+            response.Headers.Add("Content-Type", "application/json; charset=utf-8");
+
+            response.WriteString(JsonSerializer.Serialize(definition));
+
+            return response;
+        }
+
         [Function("GetWords")]
         public async Task<HttpResponseData> GetWords(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
