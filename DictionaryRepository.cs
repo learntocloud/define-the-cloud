@@ -41,6 +41,30 @@ namespace cloud_dictionary
             return response?.Resource;
         }
 
+        public async Task<Definition?> GetDefinitionByWordAsync(string word)
+        {
+
+
+            var queryDefinition = new QueryDefinition("SELECT * FROM Definitions d WHERE LOWER(d.word) = @word")
+.WithParameter("@word", word.ToLower());
+
+            var queryResultSetIterator = _definitionsCollection.GetItemQueryIterator<Definition>(queryDefinition);
+
+            List<Definition> definitions = new List<Definition>();
+
+            while (queryResultSetIterator.HasMoreResults)
+            {
+                FeedResponse<Definition> currentResultSet = await queryResultSetIterator.ReadNextAsync();
+                foreach (Definition definition in currentResultSet)
+                {
+                    definitions.Add(definition);
+                }
+            }
+
+            return definitions.FirstOrDefault(); // since 'word' is unique, there should be only one match
+        }
+
+
 
         public async Task DeleteDefinitionAsync(string definitionId)
         {
