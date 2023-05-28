@@ -79,6 +79,24 @@ namespace cloud_dictionary
             return response;
         }
 
+        [Function("GetDefinitionsBySearch")]
+        public async Task<HttpResponseData> GetDefinitionsBySearch(
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string searchTerm, int? skip, int? batchSize)
+        {
+            _logger.LogInformation("C# HTTP trigger function processed a request.");
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            var definition = await _dictionaryRepository.GetDefinitionsBySearch(searchTerm, skip, batchSize);
+            response.Headers.Add("Content-Type", "application/json; charset=utf-8");
+
+            response.WriteString(JsonSerializer.Serialize(definition));
+
+            return response;
+        }
+
+
+
+
 
 
         [Function("GetWords")]

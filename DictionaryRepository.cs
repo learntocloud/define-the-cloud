@@ -128,5 +128,19 @@ namespace cloud_dictionary
             return items;
         }
 
+        public async Task<List<Definition>> GetDefinitionsBySearch(string term, int? skip = 0, int? batchSize = 20)
+        {
+            // Query in Cosmos DB is case sensitive, so we use ToLower() 
+            var queryable = _definitionsCollection.GetItemLinqQueryable<Definition>()
+                .Where(d => d.Word.ToLower().Contains(term.ToLower())
+                            || d.Content.ToLower().Contains(term.ToLower())
+                            || d.Author.Name.ToLower().Contains(term.ToLower())
+                            || d.Tag.ToLower().Contains(term.ToLower())
+                            || d.Abbreviation.ToLower().Contains(term.ToLower()));
+
+            return await ToListAsync(queryable, skip, batchSize);
+        }
+
+
     }
 }
