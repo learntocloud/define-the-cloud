@@ -8,10 +8,12 @@ namespace cloud_dictionary
     public class DictionaryRepository
     {
         private readonly Container _definitionsCollection;
+        private readonly Container _counterCollection;
         public DictionaryRepository(CosmosClient client, IConfiguration configuration)
         {
             var database = client.GetDatabase(configuration["AZURE_COSMOS_DATABASE_NAME"]);
             _definitionsCollection = database.GetContainer(configuration["AZURE_COSMOS_CONTAINER_NAME"]);
+            _counterCollection = database.GetContainer(configuration["AZURE_COSMOS_COUNTER_CONTAINER_NAME"]);
 
         }
         public async Task<IEnumerable<Definition>> GetDefinitionsAsync(int? skip, int? batchSize)
@@ -82,7 +84,40 @@ namespace cloud_dictionary
         {
             //definition.Id = Guid.NewGuid().ToString("N");
             await _definitionsCollection.CreateItemAsync(definition, new PartitionKey(definition.Id));
+            // Update the counter
+            await IncrementCountAsync();
         }
+
+        public async Task IncrementCountAsync()
+        {
+            var countDocument = await GetCountDocumentAsync();
+            countDocument.Count++;
+            await _counterCollection.ReplaceItemAsync(countDocument, countDocument.Id, new PartitionKey(countDocument.Id));
+        }
+        public async Task DecreaseCountAsync()
+        {
+            var countDocument = await GetCountDocumentAsync();
+            countDocument.Count--;
+            await _counterCollection.ReplaceItemAsync(countDocument, countDocument.Id, new PartitionKey(countDocument.Id));
+        }
+
+
+        private async Task<Counter> GetCountDocumentAsync()
+        {
+            try
+            {
+                ItemResponse<Counter> countDocumentResponse = await _counterCollection.ReadItemAsync<Counter>("counterId", new PartitionKey("counterId"));
+                return countDocumentResponse.Resource;
+            }
+            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+        }
+
+
+
+
         public async Task UpdateDefinition(Definition existingDefinition)
         {
             await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Id));
@@ -90,12 +125,24 @@ namespace cloud_dictionary
         public async Task<Definition?> GetRandomDefinitionAsync()
         {
 
-            IOrderedQueryable<Definition> linqQueryable = _definitionsCollection.GetItemLinqQueryable<Definition>();
-            int count = await linqQueryable.CountAsync();
-            var definitions = await GetDefinitionsAsync(null, null);
+            int count = await GetDefinitionCountAsync();
+
             int randomIndex = new Random().Next(0, count);
-            Definition definition = definitions.ElementAt(randomIndex);
-            return definition;
+            // Query to get the random document
+            var query = _definitionsCollection.GetItemLinqQueryable<Definition>()
+                .Skip(randomIndex)
+                .Take(1)
+                .ToFeedIterator();
+
+            // Execute the query
+            List<Definition> definitions = new List<Definition>();
+            while (query.HasMoreResults)
+            {
+                var response = await query.ReadNextAsync();
+                definitions.AddRange(response.ToList());
+            }
+
+            return definitions.FirstOrDefault();
 
         }
         public async Task UpdateListItem(Definition existingItem)
@@ -141,6 +188,14 @@ namespace cloud_dictionary
             return await ToListAsync(queryable, skip, batchSize);
         }
 
+        public async Task<int> GetDefinitionCountAsync()
+        {
+
+
+            var countDocument = await _counterCollection.ReadItemAsync<Counter>("counterId", new PartitionKey("counterId"));
+
+            return countDocument.Resource.Count;
+        }
 
     }
 }
