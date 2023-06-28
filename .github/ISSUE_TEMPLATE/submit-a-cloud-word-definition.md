@@ -26,7 +26,7 @@ Fill out the JSON below with the following.
 
 ### Word (REQUIRED)
 
-The word you are defining. Check [this URL](https://zealous-flower-0f27b070f.2.azurestaticapps.net/) for all words we currently have.
+The word you are defining. Check [this URL](https://definethecloud.guide) for all words we currently have.
 
 #### Content (REQUIRED)
 
