@@ -14,7 +14,6 @@ namespace cloud_dictionary
             var database = client.GetDatabase(configuration["AZURE_COSMOS_DATABASE_NAME"]);
             _definitionsCollection = database.GetContainer(configuration["AZURE_COSMOS_CONTAINER_NAME"]);
             _counterCollection = database.GetContainer(configuration["AZURE_COSMOS_COUNTER_CONTAINER_NAME"]);
-
         }
         public async Task<IEnumerable<Definition>> GetDefinitionsAsync(int? skip, int? batchSize)
         {
@@ -39,7 +38,7 @@ namespace cloud_dictionary
         {
             var queryDefinition = new QueryDefinition("SELECT * FROM Definitions d WHERE LOWER(d.word) = @word").WithParameter("@word", word.ToLower());
             var queryResultSetIterator = _definitionsCollection.GetItemQueryIterator<Definition>(queryDefinition);
-            List<Definition> definitions = new List<Definition>();
+            List<Definition> definitions = new();
 
             while (queryResultSetIterator.HasMoreResults)
             {
@@ -87,22 +86,36 @@ namespace cloud_dictionary
             // Update the counter
             await IncrementCountAsync();
         }
-
         public async Task IncrementCountAsync()
         {
             var countDocument = await GetCountDocumentAsync();
-            countDocument.Count++;
-            await _counterCollection.ReplaceItemAsync(countDocument, countDocument.Id, new PartitionKey(countDocument.Id));
+            if (countDocument != null)
+            {
+                countDocument.Count++;
+                await _counterCollection.ReplaceItemAsync(countDocument, countDocument.Id, new PartitionKey(countDocument.Id));
+            }
+            else
+            {
+                throw new Exception("Counter document not found.");
+            }
+
         }
+
         public async Task DecreaseCountAsync()
         {
             var countDocument = await GetCountDocumentAsync();
-            countDocument.Count--;
-            await _counterCollection.ReplaceItemAsync(countDocument, countDocument.Id, new PartitionKey(countDocument.Id));
+            if (countDocument != null)
+            {
+                countDocument.Count--;
+                await _counterCollection.ReplaceItemAsync(countDocument, countDocument.Id, new PartitionKey(countDocument.Id));
+            }
+            else
+            {
+                throw new Exception("Counter document not found.");
+            }
+
         }
-
-
-        private async Task<Counter> GetCountDocumentAsync()
+        private async Task<Counter?> GetCountDocumentAsync()
         {
             try
             {
@@ -114,10 +127,6 @@ namespace cloud_dictionary
                 return null;
             }
         }
-
-
-
-
         public async Task UpdateDefinition(Definition existingDefinition)
         {
             await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Id));
@@ -135,7 +144,7 @@ namespace cloud_dictionary
                 .ToFeedIterator();
 
             // Execute the query
-            List<Definition> definitions = new List<Definition>();
+            List<Definition> definitions = new();
             while (query.HasMoreResults)
             {
                 var response = await query.ReadNextAsync();
@@ -149,7 +158,7 @@ namespace cloud_dictionary
         {
             await _definitionsCollection.ReplaceItemAsync(existingItem, existingItem.Id, new PartitionKey(existingItem.Id));
         }
-        private async Task<List<T>> ToListAsync<T>(IQueryable<T> queryable, int? skip, int? batchSize)
+        private static async Task<List<T>> ToListAsync<T>(IQueryable<T> queryable, int? skip, int? batchSize)
         {
             if (skip != null)
             {
@@ -174,7 +183,6 @@ namespace cloud_dictionary
 
             return items;
         }
-
         public async Task<List<Definition>> GetDefinitionsBySearch(string term, int? skip = 0, int? batchSize = 20)
         {
             // Query in Cosmos DB is case sensitive, so we use ToLower() 
@@ -187,7 +195,6 @@ namespace cloud_dictionary
 
             return await ToListAsync(queryable, skip, batchSize);
         }
-
         public async Task<int> GetDefinitionCountAsync()
         {
 

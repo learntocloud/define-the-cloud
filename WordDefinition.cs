@@ -5,7 +5,7 @@ namespace cloud_dictionary
     public class WordDefinition
     {
         
-        public string Word { get; set; }
+        public string? Word { get; set; }
 
     }
 }

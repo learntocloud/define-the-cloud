@@ -23,13 +23,10 @@ namespace cloud_dictionary
             [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
-
             var response = req.CreateResponse(HttpStatusCode.OK);
             var definitions = await _dictionaryRepository.GetDefinitionsAsync(null, null);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-
             response.WriteString(JsonSerializer.Serialize(definitions));
-
             return response;
         }
 
@@ -38,29 +35,22 @@ namespace cloud_dictionary
             [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string id)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
-
             var response = req.CreateResponse(HttpStatusCode.OK);
             var definition = await _dictionaryRepository.GetDefinitionAsync(id);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-
             response.WriteString(JsonSerializer.Serialize(definition));
-
             return response;
         }
-
 
         [Function("GetDefinitionByWord")]
         public async Task<HttpResponseData> GetDefinitionByWord(
             [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string word)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
-
             var response = req.CreateResponse(HttpStatusCode.OK);
             var definition = await _dictionaryRepository.GetDefinitionByWordAsync(word);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-
             response.WriteString(JsonSerializer.Serialize(definition));
-
             return response;
         }
 
@@ -69,13 +59,10 @@ namespace cloud_dictionary
             [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag, int? skip, int? batchSize)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
-
             var response = req.CreateResponse(HttpStatusCode.OK);
             var definition = await _dictionaryRepository.GetDefinitionsByTagAsync(tag, skip, batchSize);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-
             response.WriteString(JsonSerializer.Serialize(definition));
-
             return response;
         }
 
@@ -84,33 +71,22 @@ namespace cloud_dictionary
             [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string searchTerm, int? skip, int? batchSize)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
-
             var response = req.CreateResponse(HttpStatusCode.OK);
             var definition = await _dictionaryRepository.GetDefinitionsBySearch(searchTerm, skip, batchSize);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-
             response.WriteString(JsonSerializer.Serialize(definition));
-
             return response;
         }
-
-
-
-
-
 
         [Function("GetWords")]
         public async Task<HttpResponseData> GetWords(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
-
             var response = req.CreateResponse(HttpStatusCode.OK);
             var words = await _dictionaryRepository.GetWordsAsync(null, null);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-
             response.WriteString(JsonSerializer.Serialize(words));
-
             return response;
         }
 
