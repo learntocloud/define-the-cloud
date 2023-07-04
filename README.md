@@ -20,7 +20,7 @@ Feel free to check [issues page](https://github.com/learntocloud/cloud-dictionar
 ## Author
 
 
-- Twitter: [@madebygps](https://twitter.com/FranckAbgrall)
+- Twitter: [@madebygps](https://twitter.com/madebygps)
 - Github: [@madebygps](https://github.com/madebygps)
 
 ## License
