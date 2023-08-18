@@ -1,0 +1,54 @@
+name: Check Submission
+on:
+  issues:
+    types: [opened]
+
+jobs:
+
+# Execute a Python command in GitHub Action workflow using the run keyword
+  check_submission:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip' # caching pip dependencies
+      - run: pip install -r requirements.txt
+      - uses: jannekem/run-python-script-action@v1
+        with:
+          script: |
+            import requests
+            import json
+            import re
+
+            github_repository = 'learntocloud/cloud-dictionary'
+            issue_number = "${{ github.event.issue.number }}"
+
+            # Get the issue body from the GitHub API
+            issue_body = requests.get(
+                f'https://api.github.com/repos/{github_repository}/issues/{issue_number}'
+                ).json()['body']
+
+            # TODO: Write Regex to get the word from the issue body
+            # Define the regular expression pattern to match the word in JSON Body
+            word = re.search(r'"word"\s*:\s*"([^"]+)"', issue_body)
+
+            # Now you can access the groups to get the values:
+            if word:
+                  print("Word:", word.group(1))
+
+            # Get the word from the API and match it with the word in the issue body  
+            api_url = f'https://clouddictionary.azurewebsites.net/api/GetDefinitionByWord?code=TbKqq22rzcWCe3JEYmwtR9pA7I-ik3ni8_7-t-neOUq0AzFu1J3BCA==&word={word.group(1)}'
+          
+            res = requests.get(api_url)
+            response_data = json.loads(res.text)
+            
+            word_in_dict = response_data['Word']
+            
+            if res.status_code==200 and word.group(1) == word_in_dict:
+                print('The word already exists in the cloud dictionary.')
+                exit(1)
+            else:
+                print('The word does not exist. LGTM')
+                exit(0)
