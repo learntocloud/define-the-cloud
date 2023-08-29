@@ -56,15 +56,10 @@ jobs:
               if word_in_dict == word.group(1):
                   print('The word already exists in the cloud dictionary.')
                   exit (1)
-      
-  add-comment:
-    runs-on: ubuntu-latest
-    permissions:
-        issues: write
-    steps:
-        - name: Add comment
-          uses: peter-evans/create-or-update-comment@5f728c3dae25f329afbe34ee4d08eef25569d79f
-          with:
-            issue-number: ${{ github.event.issue.number }}
-            body: |
-              The workflow has completed. Status: ${{ job.status }}.        
+
+      - name: Add comment
+        uses: peter-evans/create-or-update-comment@5f728c3dae25f329afbe34ee4d08eef25569d79f
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            The workflow has completed. Status: ${{ job.status }}.
