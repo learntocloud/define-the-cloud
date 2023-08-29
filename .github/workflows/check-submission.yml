@@ -37,18 +37,34 @@ jobs:
             # Now you can access the groups to get the values:
             if word:
                   print("Word:", word.group(1))
+            else:
+                  print("No word found in the issue body")
+                  exit(1)
 
             # Get the word from the API and match it with the word in the issue body  
             api_url = f'https://clouddictionary.azurewebsites.net/api/GetDefinitionByWord?code=TbKqq22rzcWCe3JEYmwtR9pA7I-ik3ni8_7-t-neOUq0AzFu1J3BCA==&word={word.group(1)}'
           
             res = requests.get(api_url)
             response_data = json.loads(res.text)
-            
-            word_in_dict = response_data['Word']
-            
-            if res.status_code==200 and word.group(1) == word_in_dict:
-                print('The word already exists in the cloud dictionary.')
-                exit(1)
-            else:
-                print('The word does not exist. LGTM')
-                exit(0)
+
+            if res.status_code==200 and response_data is None:
+              print('The word does not exist and needs to be added to the cloud dictionary. LGTM')
+              exit (0)
+          
+            if res.status_code==200 and response_data != None:
+              word_in_dict = response_data['Word']
+              if word_in_dict == word.group(1):
+                  print('The word already exists in the cloud dictionary.')
+                  exit (1)
+
+      - name: Comment Workflow Status
+        run: |
+          issue_number="${{ github.event.issue.number }}"
+          comment_body="The workflow has completed. Status: ${{ job.status }}."
+          comment_url="https://api.github.com/repos/${{ github.repository }}/issues/${issue_number}/comments"
+        
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d "{\"body\":\"$comment_body\"}" \
+            "$comment_url"       
