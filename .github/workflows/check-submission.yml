@@ -58,7 +58,6 @@ jobs:
                   exit (1)
       
   add-comment:
-    needs: check_submission
     runs-on: ubuntu-latest
     permissions:
         issues: write
