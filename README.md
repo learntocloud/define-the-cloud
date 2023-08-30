@@ -1,7 +1,7 @@
 <h1 align="center">Welcome to Learn to Cloud's Dictionary 👋 </h1>
 <p align="center">
   
-  <a href="https://twitter.com/FranckAbgrall">
+  <a href="https://twitter.com/learntocloud">
     <img alt="Twitter: FranckAbgrall" src="https://img.shields.io/twitter/follow/learntocloud.svg?style=social" target="_blank" />
   </a>
 </p>
