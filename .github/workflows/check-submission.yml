@@ -60,9 +60,16 @@ jobs:
                   exit (1)
 
       - name: Add comment
-        if: always()
+        if: failure()
         uses: peter-evans/create-or-update-comment@5f728c3dae25f329afbe34ee4d08eef25569d79f
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            The workflow has completed. Status: ${{ job.status }}.
+            The check-submission job: ${{ job.status }}. The word already exists in the cloud dictionatry. ❌
+      - name: Add comment
+        if: success()
+        uses: peter-evans/create-or-update-comment@5f728c3dae25f329afbe34ee4d08eef25569d79f
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+                The check-submission job: ${{ job.status }}. The definition doesn't exist, OK to post ✅
