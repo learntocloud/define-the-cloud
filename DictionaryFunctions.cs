@@ -57,11 +57,11 @@ namespace cloud_dictionary
 
         [Function("GetDefinitionsByTag")]
         public async Task<HttpResponseData> GetDefinitionsByTagAsync(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag, int? skip, int? batchSize)
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
             var response = req.CreateResponse(HttpStatusCode.OK);
-            var definition = await _dictionaryRepository.GetDefinitionsByTagAsync(tag, skip, batchSize);
+            var definition = await _dictionaryRepository.GetDefinitionsByTagAsync(tag);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
             response.WriteString(JsonSerializer.Serialize(definition));
             return response;
@@ -69,11 +69,11 @@ namespace cloud_dictionary
 
         [Function("GetDefinitionsBySearch")]
         public async Task<HttpResponseData> GetDefinitionsBySearch(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string searchTerm, int? skip, int? batchSize)
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string searchTerm)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
             var response = req.CreateResponse(HttpStatusCode.OK);
-            var definition = await _dictionaryRepository.GetDefinitionsBySearch(searchTerm, skip, batchSize);
+            var definition = await _dictionaryRepository.GetDefinitionsBySearch(searchTerm);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
             response.WriteString(JsonSerializer.Serialize(definition));
             return response;

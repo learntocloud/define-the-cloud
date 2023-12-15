@@ -26,7 +26,7 @@ namespace cloud_dictionary
                 skip,
                 batchSize);
         }
-        public async Task<IEnumerable<WordDefinition>> GetWordsAsync(int? skip, int? batchSize)
+        public async Task<IEnumerable<WordDefinition>> GetWordsAsync(int? skip = 0, int? batchSize = 0)
         {
             return await ToListAsync(
                 _definitionsCollection.GetItemLinqQueryable<WordDefinition>(),
@@ -55,7 +55,7 @@ namespace cloud_dictionary
 
             return definitions.FirstOrDefault(); // since 'word' is unique, there should be only one match
         }
-        public async Task<List<Definition>> GetDefinitionsByTagAsync(string tag, int? skip, int? batchSize)
+        public async Task<List<Definition>> GetDefinitionsByTagAsync(string tag, int? skip = 0, int? batchSize = 100)
         {
             // Set default values for pagination
             int skipValue = skip ?? 0;
