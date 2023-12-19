@@ -185,7 +185,7 @@ namespace cloud_dictionary
 
             return items;
         }
-        public async Task<List<Definition>> GetDefinitionsBySearch(string term, int? skip = 0, int? batchSize = 20)
+        public async Task<List<Definition>> GetDefinitionsBySearch(string term, int? skip = 0, int? batchSize = 10)
         {
             // Query in Cosmos DB is case sensitive, so we use ToLower() 
             var queryable = _definitionsCollection.GetItemLinqQueryable<Definition>()
