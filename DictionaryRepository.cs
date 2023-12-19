@@ -55,7 +55,7 @@ namespace cloud_dictionary
 
             return definitions.FirstOrDefault(); // since 'word' is unique, there should be only one match
         }
-        public async Task<List<Definition>> GetDefinitionsByTagAsync(string tag, int? skip = 0, int? batchSize = 100)
+        public async Task<List<Definition>> GetDefinitionsByTagAsync(string tag, int? skip, int? batchSize)
         {
             // Set default values for pagination
             int skipValue = skip ?? 0;
@@ -208,15 +208,12 @@ namespace cloud_dictionary
         public async Task<Definition?> GetDefinitionOfTheDay()
         {
             var query = _definitionOfTheDayCollection.GetItemLinqQueryable<Definition>().Take(1).ToFeedIterator();
-
             if (query.HasMoreResults)
             {
                 var response = await query.ReadNextAsync();
                 return response.FirstOrDefault();
             }
-
             return null;
-
         }
 
    

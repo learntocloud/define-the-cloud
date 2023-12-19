@@ -57,11 +57,11 @@ namespace cloud_dictionary
 
         [Function("GetDefinitionsByTag")]
         public async Task<HttpResponseData> GetDefinitionsByTagAsync(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag)
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag, int? skip = 0, int? batchSize = 10)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
             var response = req.CreateResponse(HttpStatusCode.OK);
-            var definition = await _dictionaryRepository.GetDefinitionsByTagAsync(tag);
+            var definition = await _dictionaryRepository.GetDefinitionsByTagAsync(tag, skip, batchSize);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
             response.WriteString(JsonSerializer.Serialize(definition));
             return response;
@@ -148,9 +148,7 @@ namespace cloud_dictionary
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
             var definition = await _dictionaryRepository.GetDefinitionOfTheDay();
             response.WriteString(JsonSerializer.Serialize(definition));
-
             return response;
-
         }
         
         [Function("UpdateDefinitionOfTheDay")]
