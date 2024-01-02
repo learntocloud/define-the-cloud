@@ -9,14 +9,12 @@ namespace cloud_dictionary
     public class DictionaryRepository
     {
         private readonly Container _definitionsCollection;
-        private readonly Container _counterCollection;
         private readonly Container _definitionOfTheDayCollection;
         private static readonly Random random = new();
         public DictionaryRepository(CosmosClient client, IConfiguration configuration)
         {
             var database = client.GetDatabase(configuration["AZURE_COSMOS_DATABASE_NAME"]);
             _definitionsCollection = database.GetContainer(configuration["AZURE_COSMOS_CONTAINER_NAME"]);
-            _counterCollection = database.GetContainer(configuration["AZURE_COSMOS_COUNTER_CONTAINER_NAME"]);
             _definitionOfTheDayCollection = database.GetContainer(configuration["AZURE_COSMOS_DEFINITION_OF_THE_DAY_CONTAINER_NAME"]);
         }
         public async Task<IEnumerable<Definition>> GetDefinitionsAsync(int? skip, int? batchSize)
@@ -87,49 +85,10 @@ namespace cloud_dictionary
         {
             //definition.Id = Guid.NewGuid().ToString("N");
             await _definitionsCollection.CreateItemAsync(definition, new PartitionKey(definition.Id));
-            // Update the counter
-            await IncrementCountAsync();
         }
-        public async Task IncrementCountAsync()
-        {
-            var countDocument = await GetCountDocumentAsync();
-            if (countDocument != null)
-            {
-                countDocument.Count++;
-                await _counterCollection.ReplaceItemAsync(countDocument, countDocument.Id, new PartitionKey(countDocument.Id));
-            }
-            else
-            {
-                throw new Exception("Counter document not found.");
-            }
-
-        }
-        public async Task DecreaseCountAsync()
-        {
-            var countDocument = await GetCountDocumentAsync();
-            if (countDocument != null)
-            {
-                countDocument.Count--;
-                await _counterCollection.ReplaceItemAsync(countDocument, countDocument.Id, new PartitionKey(countDocument.Id));
-            }
-            else
-            {
-                throw new Exception("Counter document not found.");
-            }
-
-        }
-        private async Task<Counter?> GetCountDocumentAsync()
-        {
-            try
-            {
-                ItemResponse<Counter> countDocumentResponse = await _counterCollection.ReadItemAsync<Counter>("counterId", new PartitionKey("counterId"));
-                return countDocumentResponse.Resource;
-            }
-            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-        }
+       
+       
+     
         public async Task UpdateDefinition(Definition existingDefinition)
         {
             await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Id));
@@ -200,9 +159,10 @@ namespace cloud_dictionary
         public async Task<int> GetDefinitionCountAsync()
         {
 
-            var countDocument = await _counterCollection.ReadItemAsync<Counter>("counterId", new PartitionKey("counterId"));
+            // Get number of all documents in definitions collection
+            var count =  await _definitionsCollection.GetItemLinqQueryable<Definition>().CountAsync();
 
-            return countDocument.Resource.Count;
+            return count;
         }
 
         public async Task<Definition?> GetDefinitionOfTheDay()
@@ -237,11 +197,6 @@ namespace cloud_dictionary
             // Add the new 'Definition of the Day'
             await _definitionOfTheDayCollection.UpsertItemAsync(newDefinition, new PartitionKey(newDefinition.Id));
         }
-
-
-
-
-
 
 
     }

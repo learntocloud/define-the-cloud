@@ -152,7 +152,7 @@ namespace cloud_dictionary
         }
         
         [Function("UpdateDefinitionOfTheDay")]
-        public async Task Run([TimerTrigger("0 0 0 * * *")] TimerInfo myTimer)
+        public async Task Run([TimerTrigger("0 0 0 * * *", RunOnStartup = true)] TimerInfo myTimer)
         {
 
             // Logic to select a random definition
