@@ -1,4 +1,4 @@
-using System;
+using System.Web;
 using cloud_dictionary.Shared;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
@@ -10,6 +10,7 @@ namespace cloud_dictionary
     {
         private readonly Container _definitionsCollection;
         private readonly Container _definitionOfTheDayCollection;
+        private const int MaxPageSize = 50;
         private static readonly Random random = new();
         public DictionaryRepository(CosmosClient client, IConfiguration configuration)
         {
@@ -17,19 +18,13 @@ namespace cloud_dictionary
             _definitionsCollection = database.GetContainer(configuration["AZURE_COSMOS_CONTAINER_NAME"]);
             _definitionOfTheDayCollection = database.GetContainer(configuration["AZURE_COSMOS_DEFINITION_OF_THE_DAY_CONTAINER_NAME"]);
         }
-        public async Task<IEnumerable<Definition>> GetDefinitionsAsync(int? skip, int? batchSize)
+        public async Task<(IEnumerable<Definition>, string?)> GetAllDefinitionsAsync(int? pageSize, string? continuationToken)
         {
-            return await ToListAsync(
-                _definitionsCollection.GetItemLinqQueryable<Definition>(),
-                skip,
-                batchSize);
-        }
-        public async Task<IEnumerable<WordDefinition>> GetWordsAsync(int? skip = 0, int? batchSize = 0)
-        {
-            return await ToListAsync(
-                _definitionsCollection.GetItemLinqQueryable<WordDefinition>(),
-                skip,
-                batchSize);
+
+            string query = "SELECT * FROM c"; // Adjust the query as needed.
+            pageSize = pageSize.HasValue && pageSize.Value <= MaxPageSize ? pageSize.Value : MaxPageSize;
+
+            return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
         }
         public async Task<Definition?> GetDefinitionAsync(string id)
         {
@@ -53,29 +48,12 @@ namespace cloud_dictionary
 
             return definitions.FirstOrDefault(); // since 'word' is unique, there should be only one match
         }
-        public async Task<List<Definition>> GetDefinitionsByTagAsync(string tag, int? skip, int? batchSize)
+        public async Task<(IEnumerable<Definition>, string?)> GetDefinitionsByTagAsync(string tag, int? pageSize, string? continuationToken)
         {
-            // Set default values for pagination
-            int skipValue = skip ?? 0;
-            int batchSizeValue = batchSize ?? 100;
-
-            // Compose SQL query with OFFSET and LIMIT for pagination
-            var queryDefinition = new QueryDefinition($"SELECT * FROM Definitions d WHERE LOWER(d.tag) = @tag OFFSET {skipValue} LIMIT {batchSizeValue}")
-        .WithParameter("@tag", tag.ToLower());
-
-            // Get the iterator
-            var iterator = _definitionsCollection.GetItemQueryIterator<Definition>(queryDefinition);
-
-            // Create a list and populate it with the results from the iterator
-            var items = new List<Definition>();
-
-            while (iterator.HasMoreResults)
-            {
-                var result = await iterator.ReadNextAsync();
-                items.AddRange(result);
-            }
-
-            return items;
+            // Compose SQL query without OFFSET and LIMIT for pagination
+            var query = $"SELECT * FROM Definitions d WHERE LOWER(d.tag) = '{tag.ToLower()}'";
+            pageSize = pageSize.HasValue && pageSize.Value <= MaxPageSize ? pageSize.Value : MaxPageSize;
+            return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
         }
         public async Task DeleteDefinitionAsync(string definitionId)
         {
@@ -86,9 +64,6 @@ namespace cloud_dictionary
             //definition.Id = Guid.NewGuid().ToString("N");
             await _definitionsCollection.CreateItemAsync(definition, new PartitionKey(definition.Id));
         }
-       
-       
-     
         public async Task UpdateDefinition(Definition existingDefinition)
         {
             await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Id));
@@ -115,56 +90,63 @@ namespace cloud_dictionary
             return definitions.FirstOrDefault();
 
         }
-        public async Task UpdateListItem(Definition existingItem)
+        private async Task<(List<T>, string?)> QueryWithPagingAsync<T>(string query, int? pageSize, string? continuationToken)
         {
-            await _definitionsCollection.ReplaceItemAsync(existingItem, existingItem.Id, new PartitionKey(existingItem.Id));
-        }
-        private static async Task<List<T>> ToListAsync<T>(IQueryable<T> queryable, int? skip, int? batchSize)
-        {
-            if (skip != null)
-            {
-                queryable = queryable.Skip(skip.Value);
-            }
 
-            if (batchSize != null)
-            {
-                queryable = queryable.Take(batchSize.Value);
-            }
 
-            using FeedIterator<T> iterator = queryable.ToFeedIterator();
-            var items = new List<T>();
-
-            while (iterator.HasMoreResults)
+            try
             {
-                foreach (var item in await iterator.ReadNextAsync())
+                List<T> entities = new List<T>(); // Create a local list of type <T> objects.
+                QueryDefinition queryDefinition = new QueryDefinition(query);
+
+                using FeedIterator<T> resultSetIterator = _definitionsCollection.GetItemQueryIterator<T>(
+                    queryDefinition,
+                    continuationToken,
+                    new QueryRequestOptions() { MaxItemCount = pageSize });
+
+                while (resultSetIterator.HasMoreResults)
                 {
-                    items.Add(item);
-                }
-            }
+                    FeedResponse<T> response = await resultSetIterator.ReadNextAsync();
+                    entities.AddRange(response);
 
-            return items;
+                    string? encodedContinuationToken = response.ContinuationToken != null ? HttpUtility.UrlEncode(response.ContinuationToken) : null;
+
+
+                    continuationToken = encodedContinuationToken;
+
+                    if (response.Count <= pageSize) { break; }
+                }
+                return (entities, continuationToken);
+            }
+            catch (CosmosException ex)
+            {
+                // Implement appropriate error handling
+                throw;
+            }
         }
-        public async Task<List<Definition>> GetDefinitionsBySearch(string term, int? skip = 0, int? batchSize = 10)
+        public async Task<(IEnumerable<Definition>, string?)> GetDefinitionsBySearch(string searchTerm, int? pageSize, string? continuationToken)
         {
             // Query in Cosmos DB is case sensitive, so we use ToLower() 
-            var queryable = _definitionsCollection.GetItemLinqQueryable<Definition>()
-                .Where(d => d.Word.ToLower().Contains(term.ToLower())
-                            || d.Content.ToLower().Contains(term.ToLower())
-                            || d.Author.Name.ToLower().Contains(term.ToLower())
-                            || d.Tag.ToLower().Contains(term.ToLower())
-                            || d.Abbreviation.ToLower().Contains(term.ToLower()));
+            IQueryable<Definition> queryable = _definitionsCollection.GetItemLinqQueryable<Definition>()
+                .Where(d => d.Word.ToLower().Contains(searchTerm.ToLower())
+                            || d.Content.ToLower().Contains(searchTerm.ToLower())
+                            || d.Author.Name.ToLower().Contains(searchTerm.ToLower())
+                            || d.Tag.ToLower().Contains(searchTerm.ToLower())
+                            || d.Abbreviation.ToLower().Contains(searchTerm.ToLower()));
+            pageSize = pageSize.HasValue && pageSize.Value <= MaxPageSize ? pageSize.Value : MaxPageSize;
 
-            return await ToListAsync(queryable, skip, batchSize);
+            string query = queryable.ToQueryDefinition().QueryText;
+            return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
+
         }
         public async Task<int> GetDefinitionCountAsync()
         {
 
             // Get number of all documents in definitions collection
-            var count =  await _definitionsCollection.GetItemLinqQueryable<Definition>().CountAsync();
+            var count = await _definitionsCollection.GetItemLinqQueryable<Definition>().CountAsync();
 
             return count;
         }
-
         public async Task<Definition?> GetDefinitionOfTheDay()
         {
             var query = _definitionOfTheDayCollection.GetItemLinqQueryable<Definition>().Take(1).ToFeedIterator();
@@ -175,8 +157,6 @@ namespace cloud_dictionary
             }
             return null;
         }
-
-   
         public async Task UpdateDefinitionOfTheDay(Definition newDefinition)
         {
             // Fetch the current 'Definition of the Day', if it exists
@@ -197,7 +177,6 @@ namespace cloud_dictionary
             // Add the new 'Definition of the Day'
             await _definitionOfTheDayCollection.UpsertItemAsync(newDefinition, new PartitionKey(newDefinition.Id));
         }
-
 
     }
 }

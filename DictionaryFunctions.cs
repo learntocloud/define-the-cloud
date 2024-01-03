@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Web;
 using cloud_dictionary.Shared;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -13,21 +14,29 @@ namespace cloud_dictionary
         private readonly ILogger _logger;
         private readonly DictionaryRepository _dictionaryRepository;
 
+        
+
         public DictionaryFunctions(ILoggerFactory loggerFactory, DictionaryRepository dictionaryRepository)
         {
             _logger = loggerFactory.CreateLogger<DictionaryFunctions>();
             _dictionaryRepository = dictionaryRepository;
         }
 
-        [Function("GetDefinitions")]
-        public async Task<HttpResponseData> GetDefinitions(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        [Function("GetAllDefinitions")]
+        public async Task<HttpResponseData> GetAllDefinitions(
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string? continuationToken = null, int? pageSize = 10)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
             var response = req.CreateResponse(HttpStatusCode.OK);
-            var definitions = await _dictionaryRepository.GetDefinitionsAsync(null, null);
+            var (definitions, newContinuationToken) = await _dictionaryRepository.GetAllDefinitionsAsync(pageSize, continuationToken);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-            response.WriteString(JsonSerializer.Serialize(definitions));
+            var result = new
+            {
+                Data = definitions,
+                ContinuationToken = newContinuationToken
+            };
+
+            response.WriteString(JsonSerializer.Serialize(result));
             return response;
         }
 
@@ -57,39 +66,39 @@ namespace cloud_dictionary
 
         [Function("GetDefinitionsByTag")]
         public async Task<HttpResponseData> GetDefinitionsByTagAsync(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag, int? skip = 0, int? batchSize = 10)
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag, string? continuationToken = null, int? pageSize = 10)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
             var response = req.CreateResponse(HttpStatusCode.OK);
-            var definition = await _dictionaryRepository.GetDefinitionsByTagAsync(tag, skip, batchSize);
+            var (definitions, newContinuationToken) = await _dictionaryRepository.GetDefinitionsByTagAsync(tag, pageSize, continuationToken);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-            response.WriteString(JsonSerializer.Serialize(definition));
+            var result = new
+            {
+                Data = definitions,
+                ContinuationToken = newContinuationToken
+            };
+
+            response.WriteString(JsonSerializer.Serialize(result));
             return response;
         }
 
         [Function("GetDefinitionsBySearch")]
         public async Task<HttpResponseData> GetDefinitionsBySearch(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string searchTerm)
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string searchTerm, string? continuationToken = null, int? pageSize = 10)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
             var response = req.CreateResponse(HttpStatusCode.OK);
-            var definition = await _dictionaryRepository.GetDefinitionsBySearch(searchTerm);
+            var (definitions, newContinuationToken) = await _dictionaryRepository.GetDefinitionsBySearch(searchTerm, pageSize, continuationToken);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-            response.WriteString(JsonSerializer.Serialize(definition));
+            var result = new
+            {
+                Data = definitions,
+                ContinuationToken = newContinuationToken
+            };
+            response.WriteString(JsonSerializer.Serialize(result));
             return response;
         }
 
-        [Function("GetWords")]
-        public async Task<HttpResponseData> GetWords(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
-        {
-            _logger.LogInformation("C# HTTP trigger function processed a request.");
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            var words = await _dictionaryRepository.GetWordsAsync(null, null);
-            response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-            response.WriteString(JsonSerializer.Serialize(words));
-            return response;
-        }
 
         [Function("GetRandomDefinition")]
         public async Task<HttpResponseData> GetRandomDefinition(
@@ -135,7 +144,7 @@ namespace cloud_dictionary
                 existingItem.LearnMoreUrl = learn_more_url;
                 existingItem.Tag = tag;
                 existingItem.Word = word;
-                await _dictionaryRepository.UpdateListItem(existingItem);
+                await _dictionaryRepository.UpdateDefinition(existingItem);
                 return response;
             }
 
@@ -150,9 +159,9 @@ namespace cloud_dictionary
             response.WriteString(JsonSerializer.Serialize(definition));
             return response;
         }
-        
+
         [Function("UpdateDefinitionOfTheDay")]
-        public async Task Run([TimerTrigger("0 0 0 * * *", RunOnStartup = true)] TimerInfo myTimer)
+        public async Task Run([TimerTrigger("0 0 0 * * *")] TimerInfo myTimer)
         {
 
             // Logic to select a random definition

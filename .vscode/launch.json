@@ -16,7 +16,7 @@
         "request": "launch",
         "preLaunchTask": "build",
         // If you have changed target frameworks, make sure to update the program path.
-        "program": "${workspaceFolder}/bin/Debug/net7.0/cloud-dictionary.dll",
+        "program": "${workspaceFolder}/bin/Debug/net8.0/linux-x64/cloud-dictionary.dll/",
         "args": [],
         "cwd": "${workspaceFolder}",
         // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
