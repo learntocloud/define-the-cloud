@@ -151,7 +151,7 @@ namespace cloud_dictionary
         }
 
         [Function("GetDefinitionOfTheDay")]
-        public async Task<HttpResponseData> GetDefinitionOfTheDay([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        public async Task<HttpResponseData> GetDefinitionOfTheDay([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
         {
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "application/json; charset=utf-8");
