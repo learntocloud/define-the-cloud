@@ -24,7 +24,7 @@ namespace cloud_dictionary
 
         [Function("GetAllDefinitions")]
         public async Task<HttpResponseData> GetAllDefinitions(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string? continuationToken = null, int? pageSize = 10)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, string? continuationToken = null, int? pageSize = 10)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
             var response = req.CreateResponse(HttpStatusCode.OK);
@@ -116,7 +116,7 @@ namespace cloud_dictionary
 
         [Function("CreateDefinition")]
         public async Task<HttpResponseData> CreateDefinition(
-       [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req, string word, string content, string learn_more_url, string tag, string abbreviation, string author_name, string author_link)
+       [HttpTrigger(AuthorizationLevel.Admin, "post")] HttpRequestData req, string word, string content, string learn_more_url, string tag, string abbreviation, string author_name, string author_link)
         {
             var response = req.CreateResponse(HttpStatusCode.Created);
             var definition = new Definition(word, content, author_name, author_link, learn_more_url, tag, abbreviation);
@@ -127,7 +127,7 @@ namespace cloud_dictionary
         }
         [Function("UpdateDefinition")]
         public async Task<HttpResponseData> UpdateDefinition(
-           [HttpTrigger(AuthorizationLevel.Function, "put", Route = "{definition_id}")] HttpRequestData req, string definition_id,
+           [HttpTrigger(AuthorizationLevel.Admin, "put", Route = "{definition_id}")] HttpRequestData req, string definition_id,
            string word, string content, string learn_more_url, string tag, string abbreviation, string author_name, string author_link)
         {
             {
