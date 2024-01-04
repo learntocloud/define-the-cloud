@@ -1,31 +1,25 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace cloud_dictionary.Shared
 {
     public class Definition
     {
-        public Definition(string word, string content, string author_name, string author_link, string learnMoreUrl, string tag, string abbreviation)
-        {
-            Id = Guid.NewGuid().ToString("N");
-            Word = word;
-            Content = content;
-            Author = new Author(author_name, author_link);
-            LearnMoreUrl = learnMoreUrl;
-            Tag = tag;
-            Abbreviation = abbreviation;
-        }
-            
+
+        public Definition() { }
         
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
+        [Required]
         public string Word { get; set; }
-
+        [Required]
         public string Content { get; set; }
-
+        [Required]
         public Author Author { get; set; }
-
+        [Required]
         public string LearnMoreUrl { get; set; }
-
+        [Required]
         public string Tag { get; set; }
-
+        
         public string Abbreviation { get; set; }
 
     }

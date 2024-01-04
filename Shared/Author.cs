@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace cloud_dictionary.Shared
 {
     public class Author
@@ -7,10 +9,10 @@ namespace cloud_dictionary.Shared
             Name = name;
             Link = link;
         }
-        
-        
-        public string Name { get; set; }
 
+        [Required]
+        public string Name { get; set; }
+        [Required]
         public string Link { get; set; }
     }
 }
