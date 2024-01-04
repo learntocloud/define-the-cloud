@@ -13,14 +13,17 @@ Fill out the JSON with your submission:
 
 ```json
     {
-    "word": "",
-    "content": "",
-    "learn_more_URL":"",
-    "tag":"",
-    "abbreviation": "",
-    "author_name":"",
-    "author_link": ""
-    }
+            
+            "Word": "network security group",
+            "Content": "A set of rules used to filter network traffic in a virtual network and or subnet.",
+            "Author": {
+                "Name": "GPS",
+                "Link": "https://youtube.com/madebygps"
+            },
+            "LearnMoreUrl": "https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview",
+            "Tag": "networking",
+            "Abbreviation": "nsg"
+        },
 ```
 Fill out the JSON below with the following.
 
@@ -30,7 +33,7 @@ The word you are defining. Check [this URL](https://definethecloud.guide) for al
 
 #### Content (REQUIRED)
 
-The definition. No more than 3 sentences.
+The definition. No more than 4 sentences.
 
 ### learn more URL (REQUIRED)
 
