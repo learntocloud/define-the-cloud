@@ -13,17 +13,16 @@ Fill out the JSON with your submission:
 
 ```json
     {
-            
-            "Word": "network security group",
-            "Content": "A set of rules used to filter network traffic in a virtual network and or subnet.",
-            "Author": {
-                "Name": "GPS",
-                "Link": "https://youtube.com/madebygps"
+        "Word": "network security group",
+        "Content": "A set of rules used to filter network traffic in a virtual network and or subnet.",
+        "Author": {
+            "Name": "GPS",
+            "Link": "https://youtube.com/madebygps"
             },
-            "LearnMoreUrl": "https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview",
-            "Tag": "networking",
-            "Abbreviation": "nsg"
-        },
+        "LearnMoreUrl": "https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview",
+        "Tag": "networking",
+        "Abbreviation": "nsg"
+    }
 ```
 Fill out the JSON below with the following.
 
