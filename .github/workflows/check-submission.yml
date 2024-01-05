@@ -1,7 +1,5 @@
 name: Check Submission
-on:
-  issues:
-    types: [opened]
+on: [workflow_dispatch]
 
 jobs:
 
