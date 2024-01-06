@@ -10,13 +10,18 @@ class Program
     static async Task Main(string[] args)
     {
 
-        
+
         var host = new HostBuilder()
-                        .ConfigureFunctionsWorkerDefaults(worker => worker.UseNewtonsoftJson())
+                        .ConfigureFunctionsWorkerDefaults(worker =>
+                        {
+                            worker.UseNewtonsoftJson();
+                            worker.UseMiddleware<ExceptionHandlingMiddleware>();
+                        })
                         .ConfigureServices(services =>
                         {
+                            services.AddSingleton<DictionaryRepository>();
                             services.AddSingleton(sp =>
-                            {
+                            { 
 
                                 return new CosmosClient(Environment.GetEnvironmentVariable("AZURE_COSMOS_ENDPOINT"), new CosmosClientOptions
                                 {
@@ -25,12 +30,9 @@ class Program
                                         PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
                                     }
                                 });
-                            }
-
-                            ); services.AddSingleton<DictionaryRepository>();
+                            });
                         })
                         .Build();
-
         await host.RunAsync();
 
     }
