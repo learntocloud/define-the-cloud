@@ -25,11 +25,18 @@ namespace cloud_dictionary
         }
         public async Task<(IEnumerable<Definition>, string?)> GetAllDefinitionsAsync(int? pageSize, string? continuationToken)
         {
+            try
+            {
+                string query = "SELECT * FROM c";
+                pageSize = pageSize.HasValue && pageSize.Value <= MaxPageSize ? pageSize.Value : MaxPageSize;
 
-            string query = "SELECT * FROM c"; // Adjust the query as needed.
-            pageSize = pageSize.HasValue && pageSize.Value <= MaxPageSize ? pageSize.Value : MaxPageSize;
-
-            return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
+                return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
+            }
+            catch (CosmosException ex)
+            {
+                _logger.LogError(ex, $"A Cosmos DB error occurred while getting the definitions.");
+                return (null, null)!;
+            }
         }
         public async Task<Definition?> GetDefinitionByIdAsync(string id)
         {
@@ -71,49 +78,86 @@ namespace cloud_dictionary
         }
         public async Task<(IEnumerable<Definition>, string?)> GetDefinitionsByTagAsync(string tag, int? pageSize, string? continuationToken)
         {
-            // Compose SQL query without OFFSET and LIMIT for pagination
-            var query = $"SELECT * FROM Definitions d WHERE LOWER(d.tag) = '{tag.ToLower()}'";
-            pageSize = pageSize.HasValue && pageSize.Value <= MaxPageSize ? pageSize.Value : MaxPageSize;
-            return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
+            try
+            {
+                var query = $"SELECT * FROM Definitions d WHERE LOWER(d.tag) = '{tag.ToLower()}'";
+                pageSize = pageSize.HasValue && pageSize.Value <= MaxPageSize ? pageSize.Value : MaxPageSize;
+
+                return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
+            }
+            catch (CosmosException ex)
+            {
+                _logger.LogError(ex, $"A Cosmos DB error occurred while getting the definitions for tag {tag}.");
+                return (null, null)!;
+            }
         }
         public async Task DeleteDefinitionAsync(string definitionId)
         {
-            await _definitionsCollection.DeleteItemAsync<Definition>(definitionId, new PartitionKey(definitionId));
+            try
+            {
+                await _definitionsCollection.DeleteItemAsync<Definition>(definitionId, new PartitionKey(definitionId));
+            }
+            catch (CosmosException ex)
+            {
+                _logger.LogError(ex, $"A Cosmos DB error occurred while deleting the definition with id {definitionId}.");
+                throw;
+            }
         }
         public async Task AddDefinitionAsync(Definition definition)
         {
-            definition.Id = Guid.NewGuid().ToString("N");
-            await _definitionsCollection.CreateItemAsync(definition, new PartitionKey(definition.Id));
+            try
+            {
+                definition.Id = Guid.NewGuid().ToString("N");
+                await _definitionsCollection.CreateItemAsync(definition, new PartitionKey(definition.Id));
+            }
+            catch (CosmosException ex)
+            {
+                _logger.LogError(ex, $"A Cosmos DB error occurred while adding the definition with id {definition.Id}.");
+                throw;
+            }
         }
         public async Task UpdateDefinition(Definition existingDefinition)
         {
-            await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Id));
+            try
+            {
+                await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Id));
+            }
+            catch (CosmosException ex)
+            {
+                _logger.LogError(ex, $"A Cosmos DB error occurred while updating the definition with id {existingDefinition.Id}.");
+                throw;
+            }
         }
         public async Task<Definition?> GetRandomDefinitionAsync()
         {
-
-            int count = await GetDefinitionCountAsync();
-            int randomIndex = random.Next(0, count);
-            // Query to get the random document
-            var query = _definitionsCollection.GetItemLinqQueryable<Definition>()
-                .Skip(randomIndex)
-                .Take(1)
-                .ToFeedIterator();
-
-            // Execute the query
-            List<Definition> definitions = new();
-            while (query.HasMoreResults)
+            try
             {
-                var response = await query.ReadNextAsync();
-                definitions.AddRange(response.ToList());
+                int count = await GetDefinitionCountAsync();
+                int randomIndex = random.Next(0, count);
+                // Query to get the random document
+                var query = _definitionsCollection.GetItemLinqQueryable<Definition>()
+                    .Skip(randomIndex)
+                    .Take(1)
+                    .ToFeedIterator();
+
+                // Execute the query
+                List<Definition> definitions = new();
+                while (query.HasMoreResults)
+                {
+                    var response = await query.ReadNextAsync();
+                    definitions.AddRange(response.ToList());
+                }
+
+                return definitions.FirstOrDefault();
             }
-
-            return definitions.FirstOrDefault();
-
+            catch (CosmosException ex)
+            {
+               _logger.LogError(ex, $"A Cosmos DB error occurred while getting a random definition.");
+                return null;
+            }
         }
         private async Task<(List<T>, string?)> QueryWithPagingAsync<T>(string query, int? pageSize, string? continuationToken)
         {
-
 
             try
             {
@@ -148,56 +192,89 @@ namespace cloud_dictionary
         }
         public async Task<(IEnumerable<Definition>, string?)> GetDefinitionsBySearch(string searchTerm, int? pageSize, string? continuationToken)
         {
-            // Query in Cosmos DB is case sensitive, so we use ToLower() 
-            IQueryable<Definition> queryable = _definitionsCollection.GetItemLinqQueryable<Definition>()
-                .Where(d => d.Word.ToLower().Contains(searchTerm.ToLower())
-                            || d.Content.ToLower().Contains(searchTerm.ToLower())
-                            || d.Author.Name.ToLower().Contains(searchTerm.ToLower())
-                            || d.Tag.ToLower().Contains(searchTerm.ToLower())
-                            || d.Abbreviation.ToLower().Contains(searchTerm.ToLower()));
-            pageSize = pageSize.HasValue && pageSize.Value <= MaxPageSize ? pageSize.Value : MaxPageSize;
+            try
+            {
+                // Query in Cosmos DB is case sensitive, so we use ToLower() 
+                IQueryable<Definition> queryable = _definitionsCollection.GetItemLinqQueryable<Definition>()
+                    .Where(d => d.Word.ToLower().Contains(searchTerm.ToLower())
+                                || d.Content.ToLower().Contains(searchTerm.ToLower())
+                                || d.Author.Name.ToLower().Contains(searchTerm.ToLower())
+                                || d.Tag.ToLower().Contains(searchTerm.ToLower())
+                                || d.Abbreviation.ToLower().Contains(searchTerm.ToLower()));
+                pageSize = pageSize.HasValue && pageSize.Value <= MaxPageSize ? pageSize.Value : MaxPageSize;
 
-            string query = queryable.ToQueryDefinition().QueryText;
-            return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
-
+                string query = queryable.ToQueryDefinition().QueryText;
+                return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
+            }
+            catch (CosmosException ex)
+            {
+                _logger.LogError(ex, $"A Cosmos DB error occurred while getting the definitions for search term {searchTerm}.");
+                return (null, null)!;
+            }
         }
         public async Task<int> GetDefinitionCountAsync()
         {
+            try
+            {
+                // Get number of all documents in definitions collection
+                var count = await _definitionsCollection.GetItemLinqQueryable<Definition>().CountAsync();
 
-            // Get number of all documents in definitions collection
-            var count = await _definitionsCollection.GetItemLinqQueryable<Definition>().CountAsync();
-
-            return count;
+                return count;
+            }
+            catch (CosmosException ex)
+            {
+                // Log the error or rethrow it, depending on your error handling strategy
+                Console.WriteLine($"CosmosException occurred: {ex.Message}");
+                throw;
+            }
         }
         public async Task<Definition?> GetDefinitionOfTheDay()
         {
-            var query = _definitionOfTheDayCollection.GetItemLinqQueryable<Definition>().Take(1).ToFeedIterator();
-            if (query.HasMoreResults)
+            try
             {
-                var response = await query.ReadNextAsync();
-                return response.FirstOrDefault();
+                var query = _definitionOfTheDayCollection.GetItemLinqQueryable<Definition>().Take(1).ToFeedIterator();
+                if (query.HasMoreResults)
+                {
+                    var response = await query.ReadNextAsync();
+                    return response.FirstOrDefault();
+                }
+                return null;
             }
-            return null;
+            catch (CosmosException ex)
+            {
+                // Log the error or rethrow it, depending on your error handling strategy
+                Console.WriteLine($"CosmosException occurred while getting definition of the day: {ex.Message}");
+                return null;
+            }
         }
         public async Task UpdateDefinitionOfTheDay(Definition newDefinition)
         {
-            // Fetch the current 'Definition of the Day', if it exists
-            var query = _definitionOfTheDayCollection.GetItemLinqQueryable<Definition>().Take(1).ToFeedIterator();
-            Definition currentDefinition = null;
-            if (query.HasMoreResults)
+            try
             {
-                var response = await query.ReadNextAsync();
-                currentDefinition = response.FirstOrDefault();
-            }
+                // Fetch the current 'Definition of the Day', if it exists
+                var query = _definitionOfTheDayCollection.GetItemLinqQueryable<Definition>().Take(1).ToFeedIterator();
+                Definition currentDefinition = null;
+                if (query.HasMoreResults)
+                {
+                    var response = await query.ReadNextAsync();
+                    currentDefinition = response.FirstOrDefault();
+                }
 
-            // Delete the current definition if it exists
-            if (currentDefinition != null)
+                // Delete the current definition if it exists
+                if (currentDefinition != null)
+                {
+                    await _definitionOfTheDayCollection.DeleteItemAsync<Definition>(currentDefinition.Id, new PartitionKey(currentDefinition.Id));
+                }
+
+                // Add the new 'Definition of the Day'
+                await _definitionOfTheDayCollection.UpsertItemAsync(newDefinition, new PartitionKey(newDefinition.Id));
+            }
+            catch (CosmosException ex)
             {
-                await _definitionOfTheDayCollection.DeleteItemAsync<Definition>(currentDefinition.Id, new PartitionKey(currentDefinition.Id));
+                // Log the error or rethrow it, depending on your error handling strategy
+                Console.WriteLine($"CosmosException occurred: {ex.Message}");
+                throw;
             }
-
-            // Add the new 'Definition of the Day'
-            await _definitionOfTheDayCollection.UpsertItemAsync(newDefinition, new PartitionKey(newDefinition.Id));
         }
 
     }

@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Azure.Cosmos;
 using Azure.Identity;
+using Microsoft.Azure.Functions.Worker.Extensions.OpenApi.Extensions;
 
 namespace cloud_dictionary;
 class Program
@@ -11,7 +12,7 @@ class Program
 
         
         var host = new HostBuilder()
-                        .ConfigureFunctionsWorkerDefaults()
+                        .ConfigureFunctionsWorkerDefaults(worker => worker.UseNewtonsoftJson())
                         .ConfigureServices(services =>
                         {
                             services.AddSingleton(sp =>
