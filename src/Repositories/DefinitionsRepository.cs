@@ -1,3 +1,4 @@
+using System;
 using System.Web;
 using cloud_dictionary.Shared;
 using Microsoft.Azure.Cosmos;
@@ -6,17 +7,15 @@ using Microsoft.Extensions.Configuration;
 
 namespace cloud_dictionary
 {
-    public class DictionaryRepository
+    public class DefinitionsRepository
     {
         private readonly Container _definitionsCollection;
-        private readonly Container _definitionOfTheDayCollection;
         private const int MaxPageSize = 50;
         private static readonly Random random = new();
-        public DictionaryRepository(CosmosClient client, IConfiguration configuration)
+        public DefinitionsRepository(CosmosClient client, IConfiguration configuration)
         {
             var database = client.GetDatabase(configuration["AZURE_COSMOS_DATABASE_NAME"]);
             _definitionsCollection = database.GetContainer(configuration["AZURE_COSMOS_CONTAINER_NAME"]);
-            _definitionOfTheDayCollection = database.GetContainer(configuration["AZURE_COSMOS_DEFINITION_OF_THE_DAY_CONTAINER_NAME"]);
         }
         public async Task<(IEnumerable<Definition>, string?)> GetAllDefinitionsAsync(int? pageSize, string? continuationToken)
         {
@@ -27,8 +26,8 @@ namespace cloud_dictionary
         }
         public async Task<Definition?> GetDefinitionByIdAsync(string id)
         {
-                var response = await _definitionsCollection.ReadItemAsync<Definition>(id, new PartitionKey(id));
-                return response.Resource;
+            var response = await _definitionsCollection.ReadItemAsync<Definition>(id, new PartitionKey(id));
+            return response.Resource;
         }
         public async Task<Definition?> GetDefinitionByWordAsync(string word)
         {
@@ -66,23 +65,7 @@ namespace cloud_dictionary
         {
             await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Id));
         }
-        public async Task<Definition?> GetRandomDefinitionAsync()
-        {
-            int count = await GetDefinitionCountAsync();
-            int randomIndex = random.Next(0, count);
-            var query = _definitionsCollection.GetItemLinqQueryable<Definition>()
-                .Skip(randomIndex)
-                .Take(1)
-                .ToFeedIterator();
-
-            List<Definition> definitions = new();
-            while (query.HasMoreResults)
-            {
-                var response = await query.ReadNextAsync();
-                definitions.AddRange(response.ToList());
-            }
-            return definitions.FirstOrDefault();
-        }
+        
         private async Task<(List<T>, string?)> QueryWithPagingAsync<T>(string query, int? pageSize, string? continuationToken)
         {
 
@@ -97,7 +80,7 @@ namespace cloud_dictionary
             {
                 FeedResponse<T> response = await resultSetIterator.ReadNextAsync();
                 entities.AddRange(response);
-                string? encodedContinuationToken = 
+                string? encodedContinuationToken =
                 response.ContinuationToken != null ? HttpUtility.UrlEncode(response.ContinuationToken) : null;
                 continuationToken = encodedContinuationToken;
                 if (response.Count <= pageSize) { break; }
@@ -117,35 +100,32 @@ namespace cloud_dictionary
             string query = queryable.ToQueryDefinition().QueryText;
             return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
         }
+
+        public async Task<Definition?> GetRandomDefinitionAsync()
+        {
+            int count = await GetDefinitionCountAsync();
+            // Use DefinitionService.cs to get the count of definitions
+
+            int randomIndex = random.Next(0, count);
+            var query = _definitionsCollection.GetItemLinqQueryable<Definition>()
+                .Skip(randomIndex)
+                .Take(1)
+                .ToFeedIterator();
+
+            List<Definition> definitions = new();
+            while (query.HasMoreResults)
+            {
+                var response = await query.ReadNextAsync();
+                definitions.AddRange(response.ToList());
+            }
+            return definitions.FirstOrDefault();
+        }
+
         public async Task<int> GetDefinitionCountAsync()
         {
             var count = await _definitionsCollection.GetItemLinqQueryable<Definition>().CountAsync();
             return count;
         }
-        public async Task<Definition?> GetDefinitionOfTheDay()
-        {
-            var query = _definitionOfTheDayCollection.GetItemLinqQueryable<Definition>().Take(1).ToFeedIterator();
-            if (query.HasMoreResults)
-            {
-                var response = await query.ReadNextAsync();
-                return response.FirstOrDefault();
-            }
-            return null;
-        }
-        public async Task UpdateDefinitionOfTheDay(Definition newDefinition)
-        {
-            var query = _definitionOfTheDayCollection.GetItemLinqQueryable<Definition>().Take(1).ToFeedIterator();
-            Definition currentDefinition = null;
-            if (query.HasMoreResults)
-            {
-                var response = await query.ReadNextAsync();
-                currentDefinition = response.FirstOrDefault();
-            }
-            if (currentDefinition != null)
-            {
-                await _definitionOfTheDayCollection.DeleteItemAsync<Definition>(currentDefinition.Id, new PartitionKey(currentDefinition.Id));
-            }
-            await _definitionOfTheDayCollection.UpsertItemAsync(newDefinition, new PartitionKey(newDefinition.Id));
-        }
+
     }
 }
