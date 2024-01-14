@@ -34,7 +34,7 @@ jobs:
       shell: pwsh # For Linux, use bash
       run: |
         pushd './tests'
-        dotnet test --no-build --verbosity normal
+        dotnet test --verbosity normal
         popd
 
     - name: 'Run Azure Functions Action'
