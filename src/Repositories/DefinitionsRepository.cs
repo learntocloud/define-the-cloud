@@ -1,3 +1,4 @@
+using System;
 using System.Web;
 using cloud_dictionary.Shared;
 using Microsoft.Azure.Cosmos;
@@ -10,6 +11,7 @@ namespace cloud_dictionary
     {
         private readonly Container _definitionsCollection;
         private const int MaxPageSize = 50;
+        private static readonly Random random = new();
         public DefinitionsRepository(CosmosClient client, IConfiguration configuration)
         {
             var database = client.GetDatabase(configuration["AZURE_COSMOS_DATABASE_NAME"]);
@@ -98,10 +100,32 @@ namespace cloud_dictionary
             string query = queryable.ToQueryDefinition().QueryText;
             return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
         }
+
+        public async Task<Definition?> GetRandomDefinitionAsync()
+        {
+            int count = await GetDefinitionCountAsync();
+            // Use DefinitionService.cs to get the count of definitions
+
+            int randomIndex = random.Next(0, count);
+            var query = _definitionsCollection.GetItemLinqQueryable<Definition>()
+                .Skip(randomIndex)
+                .Take(1)
+                .ToFeedIterator();
+
+            List<Definition> definitions = new();
+            while (query.HasMoreResults)
+            {
+                var response = await query.ReadNextAsync();
+                definitions.AddRange(response.ToList());
+            }
+            return definitions.FirstOrDefault();
+        }
+
         public async Task<int> GetDefinitionCountAsync()
         {
             var count = await _definitionsCollection.GetItemLinqQueryable<Definition>().CountAsync();
             return count;
         }
+
     }
 }

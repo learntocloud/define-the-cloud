@@ -10,7 +10,10 @@
         "/consoleloggerparameters:NoSummary"
       ],
       "type": "process",
-      "problemMatcher": "$msCompile"
+      "problemMatcher": "$msCompile",
+      "options": {
+        "cwd": "${workspaceFolder}/src" // Add this line
+      }
     },
     {
       "label": "build (functions)",
@@ -26,7 +29,10 @@
         "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": "$msCompile"
+      "problemMatcher": "$msCompile",
+      "options": {
+        "cwd": "${workspaceFolder}/src" // Add this line
+      }
     },
     {
       "label": "clean release (functions)",
@@ -59,7 +65,7 @@
       "type": "func",
       "dependsOn": "build (functions)",
       "options": {
-        "cwd": "${workspaceFolder}/bin/Debug/net8.0/linux-x64/"
+        "cwd": "${workspaceFolder}/src/bin/Debug/net8.0/linux-x64/"
       },
       "command": "host start",
       "isBackground": true,
@@ -71,7 +77,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/cloud-dictionary.csproj",
+        "${workspaceFolder}/src/cloud-dictionary.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],
@@ -83,7 +89,7 @@
       "type": "process",
       "args": [
         "publish",
-        "${workspaceFolder}/cloud-dictionary.csproj",
+        "${workspaceFolder}/src/cloud-dictionary.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],
@@ -97,7 +103,7 @@
         "watch",
         "run",
         "--project",
-        "${workspaceFolder}/cloud-dictionary.csproj"
+        "${workspaceFolder}/src/cloud-dictionary.csproj"
       ],
       "problemMatcher": "$msCompile"
     }

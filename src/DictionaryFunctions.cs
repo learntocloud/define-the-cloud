@@ -242,7 +242,7 @@ namespace cloud_dictionary
         [Function("UpdateDefinitionOfTheDay")]
         public async Task Run([TimerTrigger("0 0 0 * * *")] TimerInfo myTimer)
         {
-            Definition? definition = await _definitionOfTheDayRepository.GetRandomDefinitionAsync();
+            Definition? definition = await _definitionsRepository.GetRandomDefinitionAsync();
 
             if (definition == null)
             {

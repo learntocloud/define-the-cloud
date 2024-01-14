@@ -41,22 +41,8 @@ namespace cloud_dictionary
             await _definitionOfTheDayCollection.UpsertItemAsync(newDefinition, new PartitionKey(newDefinition.Id));
         }
 
-        public async Task<Definition?> GetRandomDefinitionAsync()
-        {
-            int count = await GetDefinitionCountAsync();
-            int randomIndex = random.Next(0, count);
-            var query = _definitionsCollection.GetItemLinqQueryable<Definition>()
-                .Skip(randomIndex)
-                .Take(1)
-                .ToFeedIterator();
+        
 
-            List<Definition> definitions = new();
-            while (query.HasMoreResults)
-            {
-                var response = await query.ReadNextAsync();
-                definitions.AddRange(response.ToList());
-            }
-            return definitions.FirstOrDefault();
-        }
+
     }
 }
