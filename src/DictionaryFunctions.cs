@@ -23,9 +23,6 @@ namespace cloud_dictionary
             _definitionOfTheDayRepository = definitionOfTheDayRepository;
         }
 
-        [OpenApiOperation(operationId: "GetAllDefinitions", tags: new[] { "Definitions" }, Summary = "Retrieve All Definitions", Description = "Retrieves a paginated list of all definitions. Supports pagination through continuation tokens.", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(Definition), Summary = "List of Definitions", Description = "Returns a paginated list of definitions along with a continuation token for further pages.")]
         [Function("GetAllDefinitions")]
         public async Task<HttpResponseData> GetAllDefinitions(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, string? continuationToken = null, int? pageSize = 10)
@@ -46,14 +43,10 @@ namespace cloud_dictionary
         }
 
         [Function("GetDefinitionById")]
-        [OpenApiOperation(operationId: "GetDefinitionById", tags: new[] { "Definitions" }, Summary = "Get definition by ID", Description = "This operation returns a definition by its ID.", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiParameter(name: "id", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The ID of the definition.")]
-        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(Definition), Summary = "Successful response", Description = "This returns the definition.")]
         public async Task<HttpResponseData> GetDefinitionById(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string id)
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string id, string word)
         {
-            var definition = await _definitionsRepository.GetDefinitionByIdAsync(id);
+            var definition = await _definitionsRepository.GetDefinitionByIdAsync(id, word);
             if (definition == null)
             {
                 _logger.LogInformation($"No definition found for ID: {id}");
@@ -64,10 +57,6 @@ namespace cloud_dictionary
         }
 
         [Function("GetDefinitionByWord")]
-        [OpenApiOperation(operationId: "GetDefinitionByWord", tags: new[] { "Definitions" }, Summary = "Get definition by word", Description = "This operation returns a definition by its word.", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiParameter(name: "word", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The word of the definition.")]
-        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(Definition), Summary = "Successful response", Description = "This returns the definition.")]
         public async Task<HttpResponseData> GetDefinitionByWord(
             [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string word)
         {
@@ -82,12 +71,6 @@ namespace cloud_dictionary
         }
 
         [Function("GetDefinitionsByTag")]
-        [OpenApiOperation(operationId: "GetDefinitionsByTag", tags: new[] { "Definitions" }, Summary = "Get definitions by tag", Description = "This operation returns definitions associated with a specific tag.", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiParameter(name: "tag", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The tag to get the definitions for.")]
-        [OpenApiParameter(name: "continuationToken", In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The continuation token to get the next page of definitions.")]
-        [OpenApiParameter(name: "pageSize", In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of definitions to return per page.")]
-        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(Dictionary<string, Definition>), Summary = "Successful response", Description = "This returns a list of definitions associated with the tag.")]
         public async Task<HttpResponseData> GetDefinitionsByTagAsync(
             [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag, string? continuationToken = null, int? pageSize = 10)
         {
@@ -107,12 +90,6 @@ namespace cloud_dictionary
         }
 
         [Function("GetDefinitionsBySearch")]
-        [OpenApiOperation(operationId: "GetDefinitionsBySearch", tags: new[] { "Definitions" }, Summary = "Get definitions by search term", Description = "This operation returns definitions matching a search term.", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiParameter(name: "searchTerm", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The search term to get the definitions for.")]
-        [OpenApiParameter(name: "continuationToken", In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The continuation token to get the next page of definitions.")]
-        [OpenApiParameter(name: "pageSize", In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of definitions to return per page.")]
-        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(Dictionary<string, Definition>), Summary = "Successful response", Description = "This returns a list of definitions matching the search term.")]
         public async Task<HttpResponseData> GetDefinitionsBySearch(
             [HttpTrigger(AuthorizationLevel.Function, "get")]
             HttpRequestData req, string searchTerm, string? continuationToken = null, int? pageSize = 10)
@@ -132,12 +109,24 @@ namespace cloud_dictionary
             return CreateJsonResponse(req, HttpStatusCode.OK, result);
         }
 
+        [Function("DeleteDefinition")]
+        public async Task<HttpResponseData> DeleteDefinition(
+            [HttpTrigger(AuthorizationLevel.Admin, "delete")] HttpRequestData req, string word)
+        {
+
+            var existingDefinition = await _definitionsRepository.GetDefinitionByWordAsync(word);
+            if (existingDefinition == null)
+            {
+                _logger.LogInformation($"DeleteDefinition: Definition with word {word} not found.");
+                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"Definition with word {word} not found." });
+            }
+            await _definitionsRepository.DeleteDefinitionAsync(existingDefinition);
+            _logger.LogInformation($"Definition with {word} deleted successfully.");
+            return req.CreateResponse(HttpStatusCode.NoContent);
+        }
+
 
         [Function("GetRandomDefinition")]
-        [OpenApiOperation(operationId: "GetRandomDefinition", tags: new[] { "Definitions" }, Summary = "Get a random definition", Description = "This operation returns a random definition.", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Header)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(Definition), Summary = "Successful response", Description = "This returns a random definition.")]
-        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.InternalServerError, Summary = "Internal Server Error", Description = "When an error occurs while processing the request.")]
         public async Task<HttpResponseData> GetRandomDefinition(
     [HttpTrigger(AuthorizationLevel.Admin, "get")] HttpRequestData req)
         {
@@ -152,12 +141,6 @@ namespace cloud_dictionary
         }
 
         [Function("CreateDefinition")]
-        [OpenApiOperation(operationId: "CreateDefinition", tags: new[] { "Definitions" }, Summary = "Create a new definition", Description = "This operation creates a new definition.", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiRequestBody("application/json", typeof(Definition), Required = true, Description = "The new definition to create.")]
-        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Header)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.Created, contentType: "application/json", bodyType: typeof(Definition), Summary = "Successful response", Description = "This returns the created definition.")]
-        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.BadRequest, Summary = "Bad Request", Description = "When the request body is null, empty or invalid.")]
-        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.Conflict, Summary = "Conflict", Description = "When a definition with the same word already exists.")]
         public async Task<HttpResponseData> CreateDefinition(
     [HttpTrigger(AuthorizationLevel.Admin, "post")] HttpRequestData req)
         {
@@ -185,22 +168,14 @@ namespace cloud_dictionary
         }
 
         [Function("UpdateDefinition")]
-        [OpenApiOperation(operationId: "UpdateDefinition", tags: new[] { "Definitions" }, Summary = "Update an existing definition", Description = "This operation updates an existing definition.", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiParameter(name: "definition_id", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The ID of the definition to update.")]
-        [OpenApiRequestBody("application/json", typeof(Definition), Required = true, Description = "The updated definition.")]
-        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Header)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(Definition), Summary = "Successful response", Description = "This returns the updated definition.")]
-        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.NotFound, Summary = "Definition not found", Description = "When no definition is found with the provided ID.")]
-        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.BadRequest, Summary = "Bad Request", Description = "When the request body is null, empty or invalid.")]
-        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.InternalServerError, Summary = "Internal Server Error", Description = "When an error occurs while processing the request.")]
         public async Task<HttpResponseData> UpdateDefinition(
-    [HttpTrigger(AuthorizationLevel.Admin, "put", Route = "UpdateDefinition/{definition_id}")] HttpRequestData req, string definition_id)
+    [HttpTrigger(AuthorizationLevel.Admin, "put", Route = "UpdateDefinition")] HttpRequestData req, string word)
         {
-            var existingDefinition = await _definitionsRepository.GetDefinitionByIdAsync(definition_id);
+            var existingDefinition = await _definitionsRepository.GetDefinitionByWordAsync(word);
             if (existingDefinition == null)
             {
-                _logger.LogInformation($"UpdateDefinition: Definition with id {definition_id} not found.");
-                var errorContent = new { Error = $"Definition with id {definition_id} not found." };
+                _logger.LogInformation($"UpdateDefinition: Definition with word {word} not found.");
+                var errorContent = new { Error = $"Definition with word {word} not found." };
                 return CreateJsonResponse(req, HttpStatusCode.NotFound, errorContent);
             }
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
@@ -218,14 +193,11 @@ namespace cloud_dictionary
                 return CreateJsonResponse(req, HttpStatusCode.BadRequest, errorContent);
             }
             await _definitionsRepository.UpdateDefinition(data);
-            _logger.LogInformation($"Definition with id {definition_id} updated successfully.");
+            _logger.LogInformation($"Definition with word {word} updated successfully.");
             return CreateJsonResponse(req, HttpStatusCode.OK, data);
         }
 
         [Function("GetDefinitionOfTheDay")]
-        [OpenApiOperation(operationId: "GetDefinitionOfTheDay", tags: new[] { "Definitions" }, Summary = "Get definition of the day", Description = "This operation returns the definition of the day.", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(Definition), Summary = "Successful response", Description = "This returns the definition of the day.")]
         public async Task<HttpResponseData> GetDefinitionOfTheDay(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
         {

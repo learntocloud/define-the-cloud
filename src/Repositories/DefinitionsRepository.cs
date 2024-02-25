@@ -24,9 +24,9 @@ namespace cloud_dictionary
 
             return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
         }
-        public async Task<Definition?> GetDefinitionByIdAsync(string id)
+        public async Task<Definition?> GetDefinitionByIdAsync(string id, string word)
         {
-            var response = await _definitionsCollection.ReadItemAsync<Definition>(id, new PartitionKey(id));
+            var response = await _definitionsCollection.ReadItemAsync<Definition>(id, new PartitionKey(word));
             return response.Resource;
         }
         public async Task<Definition?> GetDefinitionByWordAsync(string word)
@@ -52,18 +52,18 @@ namespace cloud_dictionary
             pageSize = pageSize.HasValue && pageSize.Value <= MaxPageSize ? pageSize.Value : MaxPageSize;
             return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
         }
-        public async Task DeleteDefinitionAsync(string definitionId)
+        public async Task DeleteDefinitionAsync(Definition definition)
         {
-            await _definitionsCollection.DeleteItemAsync<Definition>(definitionId, new PartitionKey(definitionId));
+            await _definitionsCollection.DeleteItemAsync<Definition>(definition.Id, new PartitionKey(definition.Word));
         }
         public async Task AddDefinitionAsync(Definition definition)
         {
             definition.Id = Guid.NewGuid().ToString("N");
-            await _definitionsCollection.CreateItemAsync(definition, new PartitionKey(definition.Id));
+            await _definitionsCollection.CreateItemAsync(definition, new PartitionKey(definition.Word));
         }
         public async Task UpdateDefinition(Definition existingDefinition)
         {
-            await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Id));
+            await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Word));
         }
         
         private async Task<(List<T>, string?)> QueryWithPagingAsync<T>(string query, int? pageSize, string? continuationToken)
