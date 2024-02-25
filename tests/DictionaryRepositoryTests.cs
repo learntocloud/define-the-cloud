@@ -36,11 +36,12 @@ public class DefinitionsRepositoryTests
         // Arrange
         var testDefinition = TestDataGenerator.GenerateDefinition();
         var definitionId = testDefinition.Id;
+        var definitionWord = testDefinition.Word;
 
         _definitionContainerMock.SetupReadItemAsync(testDefinition);
 
         // Act
-        var result = await _sut.GetDefinitionByIdAsync(definitionId);
+        var result = await _sut.GetDefinitionByIdAsync(definitionId, definitionWord);
 
         // Assert
         Assert.NotNull(result);
