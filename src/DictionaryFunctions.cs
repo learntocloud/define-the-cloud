@@ -70,6 +70,20 @@ namespace cloud_dictionary
             return CreateJsonResponse(req, HttpStatusCode.OK, definition);
         }
 
+        [Function("GetProjectByWord")]
+        public async Task<HttpResponseData> GetProjectByWord(
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string word)
+        {
+            var project = await _definitionsRepository.GetProjectByWordAsync(word);
+            if (project == null)
+            {
+                _logger.LogInformation($"No project found for word: {word}");
+                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No project found for word {word}." });
+            }
+            _logger.LogInformation($"Definition retrieved for word: {word}");
+            return CreateJsonResponse(req, HttpStatusCode.OK, project);
+        }
+
         [Function("GetDefinitionsByTag")]
         public async Task<HttpResponseData> GetDefinitionsByTagAsync(
             [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag, string? continuationToken = null, int? pageSize = 10)
