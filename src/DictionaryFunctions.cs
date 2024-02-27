@@ -86,7 +86,7 @@ namespace cloud_dictionary
 
         [Function("GetDefinitionsByTag")]
         public async Task<HttpResponseData> GetDefinitionsByTagAsync(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag, string? continuationToken = null, int? pageSize = 10)
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string tag, string? continuationToken = null, int? pageSize = 5)
         {
             var (definitions, newContinuationToken) = await _definitionsRepository.GetDefinitionsByTagAsync(tag, pageSize, continuationToken);
             if (!definitions.Any())
