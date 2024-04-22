@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Azure.Cosmos;
 using Azure.Identity;
 using Microsoft.Azure.Functions.Worker.Extensions.OpenApi.Extensions;
+using Microsoft.SemanticKernel;
 
 namespace cloud_dictionary;
 class Program
@@ -19,8 +20,20 @@ class Program
                         })
                         .ConfigureServices(services =>
                         {
-                            services.AddSingleton<DefinitionsRepository>();
+                            services.AddSingleton<DefinitionRepository>();
                             services.AddSingleton<DefinitionOfTheDayRepository>();
+                            services.AddSingleton<IKernelBuilder>(sp =>
+                            {
+                                var builder = Kernel.CreateBuilder();
+
+                                builder.AddAzureOpenAIChatCompletion(
+                                    "completionsmodel", // Azure OpenAI Deployment Name
+                                    "endpoint", // Azure OpenAI Endpoint
+                                    "apiKey" // Azure OpenAI Key
+                                );
+
+                                return builder;
+                            });
                             services.AddSingleton(sp =>
                             { 
 

@@ -14,9 +14,9 @@ namespace cloud_dictionary
     public class DictionaryFunctions
     {
         private readonly ILogger _logger;
-        private readonly DefinitionsRepository _definitionsRepository;
+        private readonly DefinitionRepository _definitionsRepository;
         private readonly DefinitionOfTheDayRepository _definitionOfTheDayRepository;
-        public DictionaryFunctions(ILoggerFactory loggerFactory, DefinitionsRepository definitionsRepository, DefinitionOfTheDayRepository definitionOfTheDayRepository)
+        public DictionaryFunctions(ILoggerFactory loggerFactory, DefinitionRepository definitionsRepository, DefinitionOfTheDayRepository definitionOfTheDayRepository)
         {
             _logger = loggerFactory.CreateLogger<DictionaryFunctions>();
             _definitionsRepository = definitionsRepository;
@@ -70,19 +70,19 @@ namespace cloud_dictionary
             return CreateJsonResponse(req, HttpStatusCode.OK, definition);
         }
 
-        [Function("GetProjectByWord")]
-        public async Task<HttpResponseData> GetProjectByWord(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string word)
-        {
-            var project = await _definitionsRepository.GetProjectByWordAsync(word);
-            if (project == null)
-            {
-                _logger.LogInformation($"No project found for word: {word}");
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No project found for word {word}." });
-            }
-            _logger.LogInformation($"Definition retrieved for word: {word}");
-            return CreateJsonResponse(req, HttpStatusCode.OK, project);
-        }
+        // [Function("GetProjectByWord")]
+        // public async Task<HttpResponseData> GetProjectByWord(
+        //     [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, string word)
+        // {
+        //     var project = await _definitionsRepository.GetProjectByWordAsync(word);
+        //     if (project == null)
+        //     {
+        //         _logger.LogInformation($"No project found for word: {word}");
+        //         return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No project found for word {word}." });
+        //     }
+        //     _logger.LogInformation($"Definition retrieved for word: {word}");
+        //     return CreateJsonResponse(req, HttpStatusCode.OK, project);
+        // }
 
         [Function("GetDefinitionsByTag")]
         public async Task<HttpResponseData> GetDefinitionsByTagAsync(

@@ -8,7 +8,7 @@ public class DefinitionsRepositoryTests
     private Mock<IConfiguration> _configMock;
     private Mock<Database> _databaseMock;
 
-    private DefinitionsRepository _sut;
+    private DefinitionRepository _sut;
 
     public DefinitionsRepositoryTests()
     {
@@ -25,7 +25,7 @@ public class DefinitionsRepositoryTests
         _configMock.Setup(c => c["AZURE_COSMOS_CONTAINER_NAME"]).Returns("containername");
 
 
-        _sut = new DefinitionsRepository(
+        _sut = new DefinitionRepository(
             _cosmosClientMock.Object,
             _configMock.Object);
     }

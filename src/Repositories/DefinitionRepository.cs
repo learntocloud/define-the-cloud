@@ -1,4 +1,3 @@
-using System;
 using System.Web;
 using cloud_dictionary.Shared;
 using Microsoft.Azure.Cosmos;
@@ -7,17 +6,15 @@ using Microsoft.Extensions.Configuration;
 
 namespace cloud_dictionary
 {
-    public class DefinitionsRepository
+    public class DefinitionRepository
     {
-        private readonly Container _definitionsCollection;
-        private readonly Container _projectsCollection;
+        private readonly Container _definitionCollection;
         private const int MaxPageSize = 50;
         private static readonly Random random = new();
-        public DefinitionsRepository(CosmosClient client, IConfiguration configuration)
+        public DefinitionRepository(CosmosClient client, IConfiguration configuration)
         {
             var database = client.GetDatabase(configuration["AZURE_COSMOS_DATABASE_NAME"]);
-            _definitionsCollection = database.GetContainer(configuration["AZURE_COSMOS_CONTAINER_NAME"]);
-            _projectsCollection = database.GetContainer(configuration["AZURE_COSMOS_PROJECT_CONTAINER_NAME"]);
+            _definitionCollection = database.GetContainer(configuration["AZURE_COSMOS_DEFINITION_CONTAINER_NAME"]);
         }
         public async Task<(IEnumerable<Definition>, string?)> GetAllDefinitionsAsync(int? pageSize, string? continuationToken)
         {
@@ -28,30 +25,14 @@ namespace cloud_dictionary
         }
         public async Task<Definition?> GetDefinitionByIdAsync(string id, string word)
         {
-            var response = await _definitionsCollection.ReadItemAsync<Definition>(id, new PartitionKey(word));
+            var response = await _definitionCollection.ReadItemAsync<Definition>(id, new PartitionKey(word));
             return response.Resource;
-        }
-
-        public async Task<Project?> GetProjectByWordAsync(string word)
-        {
-            var queryDefinition = new QueryDefinition("SELECT * FROM Project d WHERE LOWER(d.word) = @word").WithParameter("@word", word.ToLower());
-            var queryResultSetIterator = _projectsCollection.GetItemQueryIterator<Project>(queryDefinition);
-            List<Project> projects = new();
-            while (queryResultSetIterator.HasMoreResults)
-            {
-                FeedResponse<Project> currentResultSet = await queryResultSetIterator.ReadNextAsync();
-                foreach (Project project in currentResultSet)
-                {
-                    projects.Add(project);
-                }
-            }
-            return projects.FirstOrDefault();
         }
         public async Task<Definition?> GetDefinitionByWordAsync(string word)
         {
 
             var queryDefinition = new QueryDefinition("SELECT * FROM Definition d WHERE LOWER(d.word) = @word").WithParameter("@word", word.ToLower());
-            var queryResultSetIterator = _definitionsCollection.GetItemQueryIterator<Definition>(queryDefinition);
+            var queryResultSetIterator = _definitionCollection.GetItemQueryIterator<Definition>(queryDefinition);
             List<Definition> definitions = new();
 
             while (queryResultSetIterator.HasMoreResults)
@@ -72,24 +53,23 @@ namespace cloud_dictionary
         }
         public async Task DeleteDefinitionAsync(Definition definition)
         {
-            await _definitionsCollection.DeleteItemAsync<Definition>(definition.Id, new PartitionKey(definition.Word));
+            await _definitionCollection.DeleteItemAsync<Definition>(definition.Id, new PartitionKey(definition.Word));
         }
         public async Task AddDefinitionAsync(Definition definition)
         {
             definition.Id = Guid.NewGuid().ToString("N");
-            await _definitionsCollection.CreateItemAsync(definition, new PartitionKey(definition.Word));
+            await _definitionCollection.CreateItemAsync(definition, new PartitionKey(definition.Word));
         }
         public async Task UpdateDefinition(Definition existingDefinition)
         {
-            await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Word));
+            await _definitionCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Word));
         }
-        
         private async Task<(List<T>, string?)> QueryWithPagingAsync<T>(string query, int? pageSize, string? continuationToken)
         {
 
             List<T> entities = new List<T>(); // Create a local list of type <T> objects.
             QueryDefinition queryDefinition = new QueryDefinition(query);
-            using FeedIterator<T> resultSetIterator = _definitionsCollection.GetItemQueryIterator<T>(
+            using FeedIterator<T> resultSetIterator = _definitionCollection.GetItemQueryIterator<T>(
                 queryDefinition,
                 continuationToken,
                 new QueryRequestOptions() { MaxItemCount = pageSize });
@@ -105,10 +85,9 @@ namespace cloud_dictionary
             }
             return (entities, continuationToken);
         }
-
         public async Task<(IEnumerable<Definition>, string?)> GetDefinitionsBySearch(string searchTerm, int? pageSize, string? continuationToken)
         {
-            IQueryable<Definition> queryable = _definitionsCollection.GetItemLinqQueryable<Definition>()
+            IQueryable<Definition> queryable = _definitionCollection.GetItemLinqQueryable<Definition>()
                 .Where(d => d.Word.ToLower().Contains(searchTerm.ToLower())
                             || d.Content.ToLower().Contains(searchTerm.ToLower())
                             || d.Author.Name.ToLower().Contains(searchTerm.ToLower())
@@ -118,14 +97,13 @@ namespace cloud_dictionary
             string query = queryable.ToQueryDefinition().QueryText;
             return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
         }
-
         public async Task<Definition?> GetRandomDefinitionAsync()
         {
             int count = await GetDefinitionCountAsync();
            
 
             int randomIndex = random.Next(0, count);
-            var query = _definitionsCollection.GetItemLinqQueryable<Definition>()
+            var query = _definitionCollection.GetItemLinqQueryable<Definition>()
                 .Skip(randomIndex)
                 .Take(1)
                 .ToFeedIterator();
@@ -138,10 +116,9 @@ namespace cloud_dictionary
             }
             return definitions.FirstOrDefault();
         }
-
         public async Task<int> GetDefinitionCountAsync()
         {
-            var count = await _definitionsCollection.GetItemLinqQueryable<Definition>().CountAsync();
+            var count = await _definitionCollection.GetItemLinqQueryable<Definition>().CountAsync();
             return count;
         }
 
