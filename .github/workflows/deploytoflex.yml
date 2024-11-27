@@ -1,4 +1,4 @@
-name: Deploy .NET isolated Azure Function App
+name: Deploy .NET isolated Azure Function App Flex
 
 on:
   workflow_dispatch:
