@@ -2,8 +2,6 @@ name: Deploy .NET isolated Azure Function App
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
 
 env:
   AZURE_FUNCTIONAPP_NAME: 'clouddictionary'   # set this to your function app name on Azure
