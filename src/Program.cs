@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Azure.Cosmos;
-using Azure.Identity;
 using Microsoft.Azure.Functions.Worker.Extensions.OpenApi.Extensions;
+using Microsoft.CognitiveServices.Speech;
 
 namespace cloud_dictionary;
 class Program
@@ -22,7 +22,7 @@ class Program
                             services.AddSingleton<DefinitionsRepository>();
                             services.AddSingleton<DefinitionOfTheDayRepository>();
                             services.AddSingleton(sp =>
-                            { 
+                            {
 
                                 return new CosmosClient(Environment.GetEnvironmentVariable("AZURE_COSMOS_ENDPOINT"), new CosmosClientOptions
                                 {
@@ -31,6 +31,18 @@ class Program
                                         PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
                                     }
                                 });
+                            });
+                            services.AddSingleton(sp =>
+                            {
+                                var config = SpeechConfig.FromSubscription(Environment.GetEnvironmentVariable("SpeechServiceKey"), Environment.GetEnvironmentVariable("SpeechServiceRegion"));
+
+
+
+                                config.SpeechSynthesisVoiceName = "en-US-JennyNeural";
+
+
+                                return new SpeechSynthesizer(config);
+
                             });
                         })
                         .Build();
