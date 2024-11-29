@@ -12,7 +12,6 @@ namespace cloud_dictionary
     {
         private readonly Container _definitionsCollection;
         private readonly Container _projectsCollection;
-
         private readonly SpeechSynthesizer _speechSynthesizer;
         private const int MaxPageSize = 50;
         private static readonly Random random = new();
@@ -35,7 +34,6 @@ namespace cloud_dictionary
             var response = await _definitionsCollection.ReadItemAsync<Definition>(id, new PartitionKey(word));
             return response.Resource;
         }
-
         public async Task<Project?> GetProjectByWordAsync(string word)
         {
             var queryDefinition = new QueryDefinition("SELECT * FROM Project d WHERE LOWER(d.word) = @word").WithParameter("@word", word.ToLower());
@@ -87,7 +85,6 @@ namespace cloud_dictionary
         {
             await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Word));
         }
-
         private async Task<(List<T>, string?)> QueryWithPagingAsync<T>(string query, int? pageSize, string? continuationToken)
         {
 
@@ -109,7 +106,6 @@ namespace cloud_dictionary
             }
             return (entities, continuationToken);
         }
-
         public async Task<(IEnumerable<Definition>, string?)> GetDefinitionsBySearch(string searchTerm, int? pageSize, string? continuationToken)
         {
             IQueryable<Definition> queryable = _definitionsCollection.GetItemLinqQueryable<Definition>()
@@ -122,7 +118,6 @@ namespace cloud_dictionary
             string query = queryable.ToQueryDefinition().QueryText;
             return await QueryWithPagingAsync<Definition>(query, pageSize, continuationToken);
         }
-
         public async Task<Definition?> GetRandomDefinitionAsync()
         {
             int count = await GetDefinitionCountAsync();
@@ -142,13 +137,11 @@ namespace cloud_dictionary
             }
             return definitions.FirstOrDefault();
         }
-
         public async Task<int> GetDefinitionCountAsync()
         {
             var count = await _definitionsCollection.GetItemLinqQueryable<Definition>().CountAsync();
             return count;
         }
-
         public async Task<byte[]> GetPronunciationAudioAsync(string word)
     {
         
