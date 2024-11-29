@@ -4,10 +4,7 @@ using System.Text.Json;
 using cloud_dictionary.Shared;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 
 namespace cloud_dictionary
 {
@@ -15,12 +12,12 @@ namespace cloud_dictionary
     {
         private readonly ILogger _logger;
         private readonly DefinitionsRepository _definitionsRepository;
-        private readonly DefinitionOfTheDayRepository _definitionOfTheDayRepository;
-        public DictionaryFunctions(ILoggerFactory loggerFactory, DefinitionsRepository definitionsRepository, DefinitionOfTheDayRepository definitionOfTheDayRepository)
+  
+        public DictionaryFunctions(ILoggerFactory loggerFactory, DefinitionsRepository definitionsRepository)
         {
             _logger = loggerFactory.CreateLogger<DictionaryFunctions>();
             _definitionsRepository = definitionsRepository;
-            _definitionOfTheDayRepository = definitionOfTheDayRepository;
+            
         }
 
         [Function("GetAllDefinitions")]
@@ -31,7 +28,7 @@ namespace cloud_dictionary
             if (definitions == null || !definitions.Any())
             {
                 _logger.LogInformation("No definitions found.");
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = "No definitions found." });
+                return await CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = "No definitions found." });
             }
             var result = new
             {
@@ -39,7 +36,7 @@ namespace cloud_dictionary
                 ContinuationToken = newContinuationToken
             };
             _logger.LogInformation("All definitions retrieved successfully.");
-            return CreateJsonResponse(req, HttpStatusCode.OK, result);
+            return await CreateJsonResponse(req, HttpStatusCode.OK, result);
         }
 
         [Function("GetDefinitionById")]
@@ -50,10 +47,10 @@ namespace cloud_dictionary
             if (definition == null)
             {
                 _logger.LogInformation($"No definition found for ID: {id}");
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No definition found for ID {id}." });
+                return await CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No definition found for ID {id}." });
             }
             _logger.LogInformation($"Definition retrieved for ID: {id}");
-            return CreateJsonResponse(req, HttpStatusCode.OK, definition);
+            return await CreateJsonResponse(req, HttpStatusCode.OK, definition);
         }
 
         [Function("GetDefinitionByWord")]
@@ -64,10 +61,10 @@ namespace cloud_dictionary
             if (definition == null)
             {
                 _logger.LogInformation($"No definition found for word: {word}");
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No definition found for word {word}." });
+                return await CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No definition found for word {word}." });
             }
             _logger.LogInformation($"Definition retrieved for word: {word}");
-            return CreateJsonResponse(req, HttpStatusCode.OK, definition);
+            return await CreateJsonResponse(req, HttpStatusCode.OK, definition);
         }
 
         [Function("GetProjectByWord")]
@@ -78,10 +75,10 @@ namespace cloud_dictionary
             if (project == null)
             {
                 _logger.LogInformation($"No project found for word: {word}");
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No project found for word {word}." });
+                return await CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No project found for word {word}." });
             }
             _logger.LogInformation($"Definition retrieved for word: {word}");
-            return CreateJsonResponse(req, HttpStatusCode.OK, project);
+            return await CreateJsonResponse(req, HttpStatusCode.OK, project);
         }
 
         [Function("GetDefinitionsByTag")]
@@ -92,7 +89,7 @@ namespace cloud_dictionary
             if (!definitions.Any())
             {
                 _logger.LogInformation($"No definitions found for tag {tag}.");
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No definitions found for tag {tag}." });
+                return await CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No definitions found for tag {tag}." });
             }
             var result = new
             {
@@ -100,7 +97,7 @@ namespace cloud_dictionary
                 ContinuationToken = newContinuationToken
             };
             _logger.LogInformation($"Definitions retrieved for tag {tag}.");
-            return CreateJsonResponse(req, HttpStatusCode.OK, result);
+            return await CreateJsonResponse(req, HttpStatusCode.OK, result);
         }
 
         [Function("GetDefinitionsBySearch")]
@@ -112,7 +109,7 @@ namespace cloud_dictionary
             if (!definitions.Any())
             {
                 _logger.LogInformation($"No definitions found for search term {searchTerm}.");
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No definitions found for search term {searchTerm}." });
+                return await CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"No definitions found for search term {searchTerm}." });
             }
             var result = new
             {
@@ -120,7 +117,7 @@ namespace cloud_dictionary
                 ContinuationToken = newContinuationToken
             };
             _logger.LogInformation($"Definitions retrieved for search term {searchTerm}.");
-            return CreateJsonResponse(req, HttpStatusCode.OK, result);
+            return await CreateJsonResponse(req, HttpStatusCode.OK, result);
         }
 
         [Function("DeleteDefinition")]
@@ -132,7 +129,7 @@ namespace cloud_dictionary
             if (existingDefinition == null)
             {
                 _logger.LogInformation($"DeleteDefinition: Definition with word {word} not found.");
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"Definition with word {word} not found." });
+                return await CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = $"Definition with word {word} not found." });
             }
             await _definitionsRepository.DeleteDefinitionAsync(existingDefinition);
             _logger.LogInformation($"Definition with {word} deleted successfully.");
@@ -148,10 +145,10 @@ namespace cloud_dictionary
             if (definition == null)
             {
                 _logger.LogWarning("No random definition could be found.");
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = "No random definition could be found." });
+                return await CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = "No random definition could be found." });
             }
             _logger.LogInformation("Random definition retrieved successfully.");
-            return CreateJsonResponse(req, HttpStatusCode.OK, definition);
+            return await CreateJsonResponse(req, HttpStatusCode.OK, definition);
         }
 
         [Function("CreateDefinition")]
@@ -162,108 +159,86 @@ namespace cloud_dictionary
             if (string.IsNullOrEmpty(requestBody))
             {
                 _logger.LogInformation("Request body is null or empty.");
-                return CreateJsonResponse(req, HttpStatusCode.BadRequest, new { Error = "Request body is null or empty." });
+                return await CreateJsonResponse(req, HttpStatusCode.BadRequest, new { Error = "Request body is null or empty." });
             }
             Definition? newDefinition = JsonSerializer.Deserialize<Definition>(requestBody);
             if (newDefinition == null || !Validator.TryValidateObject(newDefinition, new ValidationContext(newDefinition), null))
             {
                 _logger.LogInformation("Invalid data in request body.");
-                return CreateJsonResponse(req, HttpStatusCode.BadRequest, new { Error = "Invalid data in request body." });
+                return await CreateJsonResponse(req, HttpStatusCode.BadRequest, new { Error = "Invalid data in request body." });
             }
             var existingDefinition = await _definitionsRepository.GetDefinitionByWordAsync(newDefinition.Word);
             if (existingDefinition != null)
             {
                 _logger.LogInformation($"A definition with the same word {newDefinition.Word} already exists.");
-                return CreateJsonResponse(req, HttpStatusCode.Conflict, new { Error = $"A definition for {newDefinition.Word} already exists." });
+                return await CreateJsonResponse(req, HttpStatusCode.Conflict, new { Error = $"A definition for {newDefinition.Word} already exists." });
             }
             await _definitionsRepository.AddDefinitionAsync(newDefinition);
             _logger.LogInformation($"Definition with id {newDefinition.Id} created successfully.");
-            return CreateJsonResponse(req, HttpStatusCode.Created, newDefinition);
+            return await CreateJsonResponse(req, HttpStatusCode.Created, newDefinition);
         }
 
         [Function("UpdateDefinition")]
         public async Task<HttpResponseData> UpdateDefinition(
-    [HttpTrigger(AuthorizationLevel.Admin, "put", Route = "UpdateDefinition")] HttpRequestData req, string word)
+        [HttpTrigger(AuthorizationLevel.Admin, "put", Route = "UpdateDefinition")] HttpRequestData req, string word)
         {
             var existingDefinition = await _definitionsRepository.GetDefinitionByWordAsync(word);
             if (existingDefinition == null)
             {
                 _logger.LogInformation($"UpdateDefinition: Definition with word {word} not found.");
                 var errorContent = new { Error = $"Definition with word {word} not found." };
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, errorContent);
+                return await CreateJsonResponse(req, HttpStatusCode.NotFound, errorContent);
             }
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             if (string.IsNullOrEmpty(requestBody))
             {
                 _logger.LogInformation("DictionaryFunctions.UpdateDefinition: Request body is null or empty.");
                 var errorContent = new { Error = "Request body is null or empty." };
-                return CreateJsonResponse(req, HttpStatusCode.BadRequest, errorContent);
+                return await CreateJsonResponse(req, HttpStatusCode.BadRequest, errorContent);
             }
             Definition? data = JsonSerializer.Deserialize<Definition>(requestBody);
             if (data == null || !Validator.TryValidateObject(data, new ValidationContext(data), null))
             {
                 _logger.LogInformation("DictionaryFunctions.UpdateDefinition: Invalid data in request body.");
                 var errorContent = new { Error = "Invalid data in request body." };
-                return CreateJsonResponse(req, HttpStatusCode.BadRequest, errorContent);
+                return await CreateJsonResponse(req, HttpStatusCode.BadRequest, errorContent);
             }
             await _definitionsRepository.UpdateDefinition(data);
             _logger.LogInformation($"Definition with word {word} updated successfully.");
-            return CreateJsonResponse(req, HttpStatusCode.OK, data);
+            return await CreateJsonResponse(req, HttpStatusCode.OK, data);
         }
 
-        [Function("GetDefinitionOfTheDay")]
-        public async Task<HttpResponseData> GetDefinitionOfTheDay(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
-        {
-            var definition = await _definitionOfTheDayRepository.GetDefinitionOfTheDay();
-            if (definition == null)
-            {
-                var errorResult = new { Error = "No definition found for word." };
-                return CreateJsonResponse(req, HttpStatusCode.NotFound, errorResult);
-            }
-            var resultWithoutToken = new { Data = definition };
-            return CreateJsonResponse(req, HttpStatusCode.OK, resultWithoutToken);
-        }
+        
 
-        [Function("UpdateDefinitionOfTheDay")]
-        public async Task Run([TimerTrigger("0 0 0 * * *")] TimerInfo myTimer)
-        {
-            Definition? definition = await _definitionsRepository.GetRandomDefinitionAsync();
 
-            if (definition == null)
-            {
-                _logger.LogError("UpdateDefinitionOfTheDay: No definition could be selected.");
-                return;
-            }
-            await _definitionOfTheDayRepository.UpdateDefinitionOfTheDay(definition);
-            _logger.LogInformation("UpdateDefinitionOfTheDay: Definition of the day updated successfully.");
-        }
-
-        private HttpResponseData CreateJsonResponse<T>(HttpRequestData req, HttpStatusCode statusCode, T content)
+        private async Task<HttpResponseData> CreateJsonResponse<T>(HttpRequestData req, HttpStatusCode statusCode, T content, string contentType="application/json; charset=utf-8")
         {
             var response = req.CreateResponse(statusCode);
-            response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-            response.WriteString(JsonSerializer.Serialize(content));
+            response.Headers.Add("Content-Type", contentType);
+
+            if (content is byte[] byteArray)
+            {
+                await response.Body.WriteAsync(byteArray);
+
+            } else
+            {
+                response.WriteString(JsonSerializer.Serialize(content));
+            }
+
+            
             return response;
         }
 
         [Function("GetWordPronunciation")]
         public async Task<HttpResponseData> GetWordPronunciation(
-    [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, string word)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, string word)
         {
-            try 
-    {
-        var audioData = await _definitionsRepository.GetPronunciationAudioAsync(word);
-        var response = req.CreateResponse(HttpStatusCode.OK);
-        response.Headers.Add("Content-Type", "audio/wav");
-        await response.Body.WriteAsync(audioData);
-        return response;
+            
+                var audioData = await _definitionsRepository.GetPronunciationAudioAsync(word);
+               
+                return await CreateJsonResponse(req, HttpStatusCode.OK, audioData, "audio/wav");
+            }
+            
+               
+        }
     }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Error generating pronunciation for word: {Word}", word);
-        return req.CreateResponse(HttpStatusCode.InternalServerError);
-    }
-    }
-    }
-}

@@ -20,7 +20,6 @@ class Program
                         .ConfigureServices(services =>
                         {
                             services.AddSingleton<DefinitionsRepository>();
-                            services.AddSingleton<DefinitionOfTheDayRepository>();
                             services.AddSingleton(sp =>
                             {
 
