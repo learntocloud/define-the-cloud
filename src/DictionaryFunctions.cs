@@ -246,5 +246,24 @@ namespace cloud_dictionary
             response.WriteString(JsonSerializer.Serialize(content));
             return response;
         }
+
+        [Function("GetWordPronunciation")]
+        public async Task<HttpResponseData> GetWordPronunciation(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, string word)
+        {
+            try 
+    {
+        var audioData = await _definitionsRepository.GetPronunciationAudioAsync(word);
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        response.Headers.Add("Content-Type", "audio/wav");
+        await response.Body.WriteAsync(audioData);
+        return response;
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error generating pronunciation for word: {Word}", word);
+        return req.CreateResponse(HttpStatusCode.InternalServerError);
+    }
+    }
     }
 }

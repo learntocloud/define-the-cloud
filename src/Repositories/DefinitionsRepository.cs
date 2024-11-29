@@ -4,6 +4,7 @@ using cloud_dictionary.Shared;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using Microsoft.Extensions.Configuration;
+using Microsoft.CognitiveServices.Speech;
 
 namespace cloud_dictionary
 {
@@ -11,13 +12,16 @@ namespace cloud_dictionary
     {
         private readonly Container _definitionsCollection;
         private readonly Container _projectsCollection;
+
+        private readonly SpeechSynthesizer _speechSynthesizer;
         private const int MaxPageSize = 50;
         private static readonly Random random = new();
-        public DefinitionsRepository(CosmosClient client, IConfiguration configuration)
+        public DefinitionsRepository(CosmosClient client, IConfiguration configuration, SpeechSynthesizer speechSynthesizer)
         {
             var database = client.GetDatabase(configuration["AZURE_COSMOS_DATABASE_NAME"]);
             _definitionsCollection = database.GetContainer(configuration["AZURE_COSMOS_CONTAINER_NAME"]);
             _projectsCollection = database.GetContainer(configuration["AZURE_COSMOS_PROJECT_CONTAINER_NAME"]);
+            _speechSynthesizer = speechSynthesizer;
         }
         public async Task<(IEnumerable<Definition>, string?)> GetAllDefinitionsAsync(int? pageSize, string? continuationToken)
         {
@@ -83,7 +87,7 @@ namespace cloud_dictionary
         {
             await _definitionsCollection.ReplaceItemAsync(existingDefinition, existingDefinition.Id, new PartitionKey(existingDefinition.Word));
         }
-        
+
         private async Task<(List<T>, string?)> QueryWithPagingAsync<T>(string query, int? pageSize, string? continuationToken)
         {
 
@@ -122,7 +126,7 @@ namespace cloud_dictionary
         public async Task<Definition?> GetRandomDefinitionAsync()
         {
             int count = await GetDefinitionCountAsync();
-           
+
 
             int randomIndex = random.Next(0, count);
             var query = _definitionsCollection.GetItemLinqQueryable<Definition>()
@@ -144,6 +148,19 @@ namespace cloud_dictionary
             var count = await _definitionsCollection.GetItemLinqQueryable<Definition>().CountAsync();
             return count;
         }
+
+        public async Task<byte[]> GetPronunciationAudioAsync(string word)
+    {
+        
+        var result = await _speechSynthesizer.SpeakTextAsync(word);
+        if (result.Reason == ResultReason.Canceled)
+        {
+            var cancellation = SpeechSynthesisCancellationDetails.FromResult(result);
+            throw new Exception($"Speech synthesis canceled. Error code: {cancellation.ErrorCode}. Details: {cancellation.ErrorDetails}");
+        }
+        
+        return result.AudioData;
+    }
 
     }
 }
