@@ -137,19 +137,7 @@ namespace cloud_dictionary
         }
 
 
-        [Function("GetRandomDefinition")]
-        public async Task<HttpResponseData> GetRandomDefinition(
-    [HttpTrigger(AuthorizationLevel.Admin, "get")] HttpRequestData req)
-        {
-            var definition = await _definitionsRepository.GetRandomDefinitionAsync();
-            if (definition == null)
-            {
-                _logger.LogWarning("No random definition could be found.");
-                return await CreateJsonResponse(req, HttpStatusCode.NotFound, new { Error = "No random definition could be found." });
-            }
-            _logger.LogInformation("Random definition retrieved successfully.");
-            return await CreateJsonResponse(req, HttpStatusCode.OK, definition);
-        }
+
 
         [Function("CreateDefinition")]
         public async Task<HttpResponseData> CreateDefinition(
@@ -229,15 +217,7 @@ namespace cloud_dictionary
             return response;
         }
 
-        [Function("GetWordPronunciation")]
-        public async Task<HttpResponseData> GetWordPronunciation(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, string word)
-        {
-            
-                var audioData = await _definitionsRepository.GetPronunciationAudioAsync(word);
-               
-                return await CreateJsonResponse(req, HttpStatusCode.OK, audioData, "audio/wav");
-            }
+        
             
                
         }

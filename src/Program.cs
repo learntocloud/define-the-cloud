@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Functions.Worker.Extensions.OpenApi.Extensions;
-using Microsoft.CognitiveServices.Speech;
 
 namespace cloud_dictionary;
 class Program
@@ -31,18 +30,7 @@ class Program
                                     }
                                 });
                             });
-                            services.AddSingleton(sp =>
-                            {
-                                var config = SpeechConfig.FromSubscription(Environment.GetEnvironmentVariable("SpeechServiceKey"), Environment.GetEnvironmentVariable("SpeechServiceRegion"));
-
-
-
-                                config.SpeechSynthesisVoiceName = "en-US-JennyNeural";
-
-
-                                return new SpeechSynthesizer(config);
-
-                            });
+                            
                         })
                         .Build();
         await host.RunAsync();
